@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dsimulator"
+version = "0.0.1"
+authors = [
+    { name="Yuxiang Lin", email="yuxiang.lin@dukekunshan.edu.cn" },
+    { name="Shanruo Xu", email="shanruo.xu@dukekunshan.edu.cn" },
+    { name="Issac Yang", email="issac.yang@dukekunshan.edu.cn" },
+]
+description = "A detective simulation game"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+dsimulator = "dsimulator.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/chikubidestroyer/D.-Simulator"
+Issues = "https://github.com/chikubidestroyer/D.-Simulator/issues"

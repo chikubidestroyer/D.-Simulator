@@ -1,5 +1,31 @@
 # D Simulator
 
+## Building
+
+Build the project and output the package in the `dist` directory:
+```bash
+pip install build
+python3 -m build
+```
+
+To install and run the project locally, create a virtual environment first:
+```bash
+pip install virtualenv
+python3 -m venv .venv
+```
+
+Then activate the virtual environment:
+```bash
+source .venv/bin/activate # For Unix-like operating systems
+.venv\bin\activate.bat    # For Windows
+```
+
+Finally, install the .whl package and execute the program:
+```bash
+pip install dist/*.whl
+dsimulator
+```
+
 ## TODO
 
 ### User Interface Design
