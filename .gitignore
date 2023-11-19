@@ -1,4 +1,5 @@
-dsimulator/__pycache__/
+*__pycache__/
 dist/
 dsimulator.egg-info/
 .venv/
+*.swp

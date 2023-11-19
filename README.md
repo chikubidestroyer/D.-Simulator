@@ -1,4 +1,4 @@
-# D Simulator
+# D. Simulator
 
 ## Building
 
@@ -8,21 +8,27 @@ pip install build
 python3 -m build
 ```
 
-To install and run the project locally, create a virtual environment first:
+## Testing
+
+To test the project module locally, create a virtual environment first:
 ```bash
 pip install virtualenv
 python3 -m venv .venv
 ```
 
-Then activate the virtual environment:
+Then, activate the virtual environment:
 ```bash
 source .venv/bin/activate # For Unix-like operating systems
 .venv\bin\activate.bat    # For Windows
 ```
 
-Finally, install the .whl package and execute the program:
+Finally, do a editable install using pip:
 ```bash
-pip install dist/*.whl
+pip install -e .
+```
+
+Run the program by executing:
+```bash
 dsimulator
 ```
 
