@@ -1,7 +1,7 @@
 import sys
 import os
 import dearpygui.dearpygui as dpg
-from dsimulator.definitions import RES_DIR
+from dsimulator.defs import RES_DIR
 
 def main():
     dpg.create_context()
