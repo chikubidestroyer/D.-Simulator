@@ -1,5 +1,5 @@
 """
-The window to select save files to load from.
+The window to select save slots to load from.
 """
 
 import dearpygui.dearpygui as dpg
