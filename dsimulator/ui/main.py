@@ -19,4 +19,5 @@ with dpg.window() as main_window:
     dpg.add_text('main window')
     dpg.add_button(label='new', callback=to_new_game)
     dpg.add_button(label='load', callback=to_load)
+    dpg.add_button(label='quit', callback=dpg.stop_dearpygui)
     dpg.hide_item(main_window)

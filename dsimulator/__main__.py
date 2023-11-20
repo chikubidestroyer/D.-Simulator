@@ -6,7 +6,7 @@ from dsimulator.defs import RES_DIR
 def main():
     dpg.create_context()
     # dpg.show_style_editor()
-    dpg.create_viewport(title='D. Simulator', width=640, height=480)
+    dpg.create_viewport(title='D. Simulator', width=1920, height=1080, resizable=False, decorated=False)
 
     with dpg.font_registry():
         default_font = dpg.add_font(os.path.join(RES_DIR, 'VenrynSans-Regular.ttf'), 64)
