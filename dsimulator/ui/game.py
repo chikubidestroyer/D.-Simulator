@@ -1,5 +1,6 @@
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
+from dsimulator.game import query_inhabitant
 
 def to_main():
     dpg.hide_item(game_window)
@@ -8,5 +9,17 @@ def to_main():
 
 with dpg.window() as game_window:
     dpg.add_text('game window')
+    query_table = dpg.add_table()
     dpg.add_button(label='quit', callback=to_main)
     dpg.hide_item(game_window)
+
+def update_game_window():
+    dpg.delete_item(query_table, children_only=True)
+    inhabitant_columns, inhabitant_rows = query_inhabitant()
+    for c in inhabitant_columns:
+        dpg.add_table_column(label=c, parent=query_table)
+    for r in inhabitant_rows:
+        with dpg.table_row(parent=query_table):
+            for c in r:
+                dpg.add_text(c)
+

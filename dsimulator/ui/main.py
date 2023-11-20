@@ -5,6 +5,7 @@ from dsimulator.game import init_game
 
 def to_new_game():
     init_game()
+    ui_game.update_game_window()
     dpg.hide_item(main_window)
     dpg.show_item(ui_game.game_window)
     dpg.set_primary_window(ui_game.game_window, True)
