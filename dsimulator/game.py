@@ -1,11 +1,21 @@
+"""
+This module maintains the connection to a in-memory database storing the game state.
+The database connection is stored as a global variable.
+Functions are provided to initialize, manipulate, and query the game state database.
+
+TODO: Implement load/save.
+"""
+
 import os
 import sqlite3
 from dsimulator.defs import ROOT_DIR
+from typing import List, Tuple
 
 con = None
 
 
 def init_game():
+    """Create the schema for the in-memory game state database, then populate it procedurally."""
     global con
     con = sqlite3.connect(":memory:")
 
@@ -16,6 +26,8 @@ def init_game():
         for c in sqlCmds:
             con.execute(c)
 
+    # Currently just inserting some testing data.
+    # TODO: Implement procedural generation for the game world.
     with con:
         cur = con.execute('INSERT INTO vertex (x, y) VALUES (1, 2)')
         vertex_id = cur.lastrowid
@@ -32,7 +44,8 @@ def init_game():
                     ('John Doe', vertex_id, vertex_id, 0, 0))
 
 
-def query_inhabitant():
+def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
+    """Return known inhabitant attribute names and values"""
     cur = con.execute('''SELECT inhabitant_id, name, h.building_name, workplace_id, custody, dead, gender
                          FROM inhabitant
                               JOIN building AS h

@@ -1,9 +1,14 @@
+"""
+The user interface for the game window where the game is running in.
+"""
+
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 from dsimulator.game import query_inhabitant
 
 
 def to_main():
+    """Hide the game window and go back to main window."""
     dpg.hide_item(game_window)
     dpg.show_item(main.main_window)
     dpg.set_primary_window(main.main_window, True)
