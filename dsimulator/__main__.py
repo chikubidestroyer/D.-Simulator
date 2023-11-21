@@ -2,6 +2,8 @@
 The main entry point of the program.
 """
 
+import math, numpy as np
+import dsimulator.game as game
 import sys
 import os
 import dearpygui.dearpygui as dpg
@@ -29,6 +31,7 @@ def main() -> int:
     dpg.start_dearpygui()
     dpg.destroy_context()
 
+    
     return 0
 
 
