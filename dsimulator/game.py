@@ -2,8 +2,6 @@
 This module maintains the connection to a in-memory database storing the game state.
 The database connection is stored as a global variable.
 Functions are provided to initialize, manipulate, and query the game state database.
-
-TODO: Implement load/save.
 """
 
 import math
@@ -11,6 +9,10 @@ import os
 import sqlite3
 from dsimulator.defs import ROOT_DIR
 from typing import List, Tuple
+
+# For randomly generate testing names:
+import string
+import random
 
 con = None
 w = None  # weight graph of edges
@@ -46,7 +48,90 @@ def init_game():
         cur = con.execute(
             'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
         con.execute('INSERT INTO inhabitant (name, home_building_id, loc_building_id, custody, dead) VALUES (?, ?, ?, ?, ?)',
-                    ('John Doe', vertex_id, vertex_id, 0, 0))
+                    (''.join(random.choices(string.ascii_uppercase + string.digits, k=10)), vertex_id, vertex_id, 0, 0))
+
+
+def close_game() -> None:
+    """Close the connection to game state database"""
+    global con
+    con.close()
+    con = None
+
+
+SAVE_DIR = os.path.expanduser('~/.dsimulator')
+SAVE_LIST = os.path.join(SAVE_DIR, "save.db")
+
+
+def to_save_path(save_id: int) -> str:
+    """Convert the save slot id to the full path to the database."""
+    return os.path.join(SAVE_DIR, str(save_id) + '.db')
+
+
+def create_save_list() -> None:
+    """Create the database that stores the list of save slots if it does not exist."""
+    if not os.path.exists(SAVE_DIR):
+        os.makedirs(SAVE_DIR)
+
+    list_con = sqlite3.connect(SAVE_LIST)
+    with list_con:
+        list_con.execute('''CREATE TABLE IF NOT EXISTS save(
+                                save_id   INTEGER NOT NULL,
+                                timestamp INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                          PRIMARY KEY(save_id)
+                            )''')
+    list_con.close()
+
+
+def list_save() -> List[Tuple[int, str]]:
+    """Get a list of the save slots."""
+    create_save_list()
+    list_con = sqlite3.connect(SAVE_LIST)
+    cur = list_con.execute('''  SELECT save_id, datetime(timestamp)
+                                  FROM save
+                              ORDER BY timestamp DESC''')
+    result = cur.fetchall()
+    list_con.close()
+    return result
+
+
+def read_save(save_id: int) -> None:
+    """Read the saved database into the in-memory database."""
+    global con
+    con = sqlite3.connect(":memory:")
+    save_con = sqlite3.connect(to_save_path(save_id))
+    with save_con:
+        save_con.backup(con)
+    save_con.close()
+
+
+def write_save(save_id: int = None) -> None:
+    """Write the in-memory database into the save file (on-disk database)."""
+    global con
+    create_save_list()
+
+    list_con = sqlite3.connect(SAVE_LIST)
+    with list_con:
+        if save_id is None:
+            cur = list_con.execute('INSERT INTO save DEFAULT VALUES')
+            save_id = cur.lastrowid
+        else:
+            list_con.execute('REPLACE INTO save (save_id) VALUES (?)', (save_id,))
+    list_con.close()
+
+    save_con = sqlite3.connect(to_save_path(save_id))
+    with save_con:
+        con.backup(save_con)
+    save_con.close()
+
+
+def delete_save(save_id: int) -> None:
+    """Delete the save slot."""
+    list_con = sqlite3.connect(SAVE_LIST)
+    with list_con:
+        list_con.execute('DELETE FROM save WHERE save_id = ?', (save_id,))
+    list_con.close()
+
+    os.remove(to_save_path(save_id))
 
 
 def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:

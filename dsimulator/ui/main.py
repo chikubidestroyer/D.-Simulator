@@ -19,14 +19,19 @@ def to_new_game():
 
 def to_load():
     """Hide the main window and show the load window."""
+    load.update_load_window()
     dpg.hide_item(main_window)
     dpg.show_item(load.load_window)
     dpg.set_primary_window(load.load_window, True)
+
+
+def quit():
+    dpg.stop_dearpygui()
 
 
 with dpg.window() as main_window:
     dpg.add_text('main window')
     dpg.add_button(label='new', callback=to_new_game)
     dpg.add_button(label='load', callback=to_load)
-    dpg.add_button(label='quit', callback=dpg.stop_dearpygui)
+    dpg.add_button(label='quit', callback=quit)
     dpg.hide_item(main_window)
