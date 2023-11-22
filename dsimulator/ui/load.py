@@ -1,6 +1,4 @@
-"""
-The window to select save slots to load from.
-"""
+"""The window to select save slots to load from."""
 
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
@@ -9,16 +7,7 @@ from dsimulator.game import list_save, read_save, delete_save
 from typing import Callable
 
 
-def to_loaded_game():
-    """Hide the load window and show the loaded game."""
-    init_game()
-    ui_game.update_game_window()
-    dpg.hide_item(main_window)
-    dpg.show_item(ui_game.game_window)
-    dpg.set_primary_window(ui_game.game_window, True)
-
-
-def to_main():
+def to_main() -> None:
     """Hide the load window and go back to main window."""
     dpg.hide_item(load_window)
     dpg.show_item(main.main_window)
@@ -33,7 +22,7 @@ with dpg.window() as load_window:
 
 
 def make_load(save_id: int) -> Callable[[], None]:
-    """Create a callback function that loads the specific save slot"""
+    """Create a callback function that loads the specific save slot."""
     def load() -> None:
         read_save(save_id)
         ui_game.update_game_window()
@@ -52,7 +41,7 @@ def make_delete(save_id: int) -> Callable[[], None]:
 
 
 def update_load_window() -> None:
-    """Update the load window, reconstruct the save table"""
+    """Update the load window, reconstruct the save table."""
     dpg.delete_item(save_table, children_only=True)
 
     for _ in range(3):

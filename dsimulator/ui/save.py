@@ -1,6 +1,4 @@
-"""
-The window to select save slots to save into.
-"""
+"""The window to select save slots to save into."""
 
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.game as game_ui
@@ -8,14 +6,15 @@ from dsimulator.game import list_save, write_save, delete_save
 from typing import Callable
 
 
-def to_game():
+def to_game() -> None:
     """Hide the save window and go back to game window."""
     dpg.hide_item(save_window)
     dpg.show_item(game_ui.game_window)
     dpg.set_primary_window(game_ui.game_window, True)
 
 
-def new_save():
+def new_save() -> None:
+    """Create a new game save."""
     write_save()
     update_save_window()
 

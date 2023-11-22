@@ -1,6 +1,4 @@
-"""
-The main entry point of the program.
-"""
+"""The main entry point of the program."""
 
 import sys
 import os

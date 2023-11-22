@@ -1,6 +1,4 @@
-"""
-The user interface for the game window where the game is running in.
-"""
+"""The user interface for the game window where the game is running in."""
 
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
@@ -8,7 +6,7 @@ import dsimulator.ui.save as save
 from dsimulator.game import close_game, query_inhabitant
 
 
-def to_save():
+def to_save() -> None:
     """Hide the game window show the save window."""
     save.update_save_window()
     dpg.hide_item(game_window)
@@ -16,7 +14,7 @@ def to_save():
     dpg.set_primary_window(save.save_window, True)
 
 
-def to_main():
+def to_main() -> None:
     """Hide the game window and go back to main window."""
     close_game()
     dpg.hide_item(game_window)
@@ -32,8 +30,8 @@ with dpg.window() as game_window:
     dpg.hide_item(game_window)
 
 
-def update_game_window():
-    "Update the query table/results in the game window."
+def update_game_window() -> None:
+    """Update the query table/results in the game window."""
     dpg.delete_item(query_table, children_only=True)
     inhabitant_columns, inhabitant_rows = query_inhabitant()
     for c in inhabitant_columns:

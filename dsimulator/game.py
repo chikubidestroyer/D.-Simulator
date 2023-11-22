@@ -1,5 +1,6 @@
 """
 This module maintains the connection to a in-memory database storing the game state.
+
 The database connection is stored as a global variable.
 Functions are provided to initialize, manipulate, and query the game state database.
 """
@@ -21,7 +22,7 @@ distance_graph = None  # directed graph for map in the game, calculated in floyd
 pi_graph = None  # parent graph indicating path for SP
 
 
-def init_game():
+def init_game() -> None:
     """Create the schema for the in-memory game state database, then populate it procedurally."""
     global con
     con = sqlite3.connect(":memory:")
@@ -52,7 +53,7 @@ def init_game():
 
 
 def close_game() -> None:
-    """Close the connection to game state database"""
+    """Close the connection to game state database."""
     global con
     con.close()
     con = None
@@ -135,7 +136,7 @@ def delete_save(save_id: int) -> None:
 
 
 def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
-    """Return known inhabitant attribute names and values"""
+    """Return known inhabitant attribute names and values."""
     cur = con.execute('''SELECT inhabitant_id, name, h.building_name, workplace_id, custody, dead, gender
                          FROM inhabitant
                               JOIN building AS h
@@ -143,16 +144,16 @@ def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
     return ('inhabitant_id', 'name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), cur.fetchall()
 
 
-def lockdown(building_id):
-    """Set given building to lockdown"""
+def lockdown(building_id: int) -> None:
+    """Set given building to lockdown."""
     con.execute('''
         UPDATE building
         SET lockdown = 1
         WHERE building_id = {0}'''.format(building_id))
 
 
-def query_inhabitant_relationship(subject_id):
-    """Returns list of inhabitants having relations with subject"""
+def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
+    """Return the list of inhabitants having relations with subject."""
     cur = con.execute('''
         SELECT object_id, description
         FROM relationship
@@ -160,8 +161,8 @@ def query_inhabitant_relationship(subject_id):
     return cur.fetchall()
 
 
-def modify_suspect(inhabitant_id):
-    """Sets/unsets given inhabitant in suspect"""
+def modify_suspect(inhabitant_id: int) -> None:
+    """Set/unset given inhabitant in suspect."""
     cur = con.execute('''
         SELECT *
         FROM suspect
@@ -178,10 +179,13 @@ def modify_suspect(inhabitant_id):
             WHERE inhabitant_id = {0}'''.format(inhabitant_id))
 
 
-def query_vertex_weight():
-    # Sets global variable vertex weight graph/array
-    # used for floyd_warshall
-    # Should be ran at the start of the game
+def query_vertex_weight() -> List[List[int]]:
+    """
+    Set global variable vertex weight graph/array.
+
+    Used for floyd_warshall.
+    Should be ran at the start of the game
+    """
     global num_vertex
     global w
 
@@ -207,10 +211,12 @@ def query_vertex_weight():
     return w
 
 
-def floyd_warshall(weight):
-    """ sets global distance_graph (weight of shortest path)
-        sets global Pi indicating path
-        should be ran at the start of game after query_vertex_weight
+def floyd_warshall(weight: List[List[int]]) -> None:
+    """
+    Set global distance_graph (weight of shortest path).
+
+    Set global Pi indicating path.
+    Should be ran at the start of game after query_vertex_weight.
     """
     global w
     global num_vertex
@@ -255,13 +261,14 @@ def floyd_warshall(weight):
         print(pi)
 
 
-def find_paths(start, end, time_limit):
-    """ Returns a 2D list, each list is a path indicated by a sequence of vertex_ids
+def find_paths(start: int, end: int, time_limit: int) -> List[List[int]]:
+    """
+    Return a 2D list, each list is a path indicated by a sequence of vertex_ids.
 
     Args:
-        start (int): vertex_id where the path starts
-        end (int): vertex_id of the designation
-        time_limit (int): within how many minutes
+    start (int): vertex_id where the path starts
+    end (int): vertex_id of the designation
+    time_limit (int): within how many minutes
     """
     global num_vertex
     global pi_graph
