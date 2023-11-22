@@ -23,10 +23,10 @@ def to_main() -> None:
 
 
 with dpg.window() as game_window:
-    dpg.add_text('game window')
+    dpg.add_text('Query Result')
     query_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
-    dpg.add_button(label='save', callback=to_save)
-    dpg.add_button(label='quit', callback=to_main)
+    dpg.add_button(label='Save Game', callback=to_save)
+    dpg.add_button(label='Quit to Main Menu', callback=to_main)
     dpg.hide_item(game_window)
 
 

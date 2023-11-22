@@ -29,8 +29,8 @@ def quit() -> None:
 
 
 with dpg.window() as main_window:
-    dpg.add_text('main window')
-    dpg.add_button(label='new', callback=to_new_game)
-    dpg.add_button(label='load', callback=to_load)
-    dpg.add_button(label='quit', callback=quit)
+    dpg.add_text('D. Simulator')
+    dpg.add_button(label='New Game', callback=to_new_game)
+    dpg.add_button(label='Load Game', callback=to_load)
+    dpg.add_button(label='Quit', callback=quit)
     dpg.hide_item(main_window)
