@@ -2,6 +2,9 @@
 The main entry point of the program.
 """
 
+import math, numpy as np
+import dsimulator.game as game
+import dsimulator.generator as gen
 import sys
 import os
 import dearpygui.dearpygui as dpg
@@ -10,6 +13,7 @@ from dsimulator.defs import RES_DIR
 
 def main() -> int:
     """Initialize DearPyGui, load GUI fonts, invoke the main window, and handle cleanup."""
+    print(gen.generate_map())
     dpg.create_context()
     # dpg.show_style_editor()
     dpg.create_viewport(title='D. Simulator', width=1920,
@@ -29,6 +33,7 @@ def main() -> int:
     dpg.start_dearpygui()
     dpg.destroy_context()
 
+    
     return 0
 
 

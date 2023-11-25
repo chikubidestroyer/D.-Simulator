@@ -63,7 +63,15 @@ def lockdown(building_id):
     con.execute('''
         UPDATE building
         SET lockdown = 1
-        WHERE building_id = {0}'''.format(building_id))
+        WHERE building_id = {0};'''.format(building_id))
+
+def create_lockdown_buidling_view():
+    con.execute('''
+        CREATE VIEW lockdown_building AS
+            SELECT building_id
+            FROM building
+            WHERE lockdown = 1;
+                ''')
 
 
 def query_inhabitant_relationship(subject_id):
@@ -206,5 +214,6 @@ def find_paths(start, end, time_limit):
 
     if start != end and w[start][end] < math.inf:
         result.append([end])
-
+        
+    result.append("re")
     return result

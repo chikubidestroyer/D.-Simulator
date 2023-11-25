@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 
-import mysql
+#import mysql
 
 
 
@@ -40,21 +40,44 @@ def generate_custody_status(num_inhabitants):
 def generate_genders(num_inhabitants):
     return [random.choice(['Male', 'Female']) for _ in range(num_inhabitants)]
 
+def generate_map():
+    result = ''
+    for y in range(10):
+        for x in range(10):
+            result = result + 'INSERT INTO vertex VALUES({0}, {1}, {2});\n'.format(y*10+x, x, y)
+    
+    template = 'INSERT INTO edge VALUES({0}, {1}, {2});\n'
+    for y in range(10):
+        for x in range(10):
+            y_temp = random.randint(10,20)
+            x_temp = random.randint(10,20)
+            if y != 9:
+                result = result + template.format(y*10+x, (y+1)*10+x, y_temp)
+                result = result + template.format((y+1)*10+x, y*10+x, y_temp)
+            if x != 9:
+                result = result + template.format(y*10+x, y*10+x+1, x_temp)
+                result = result + template.format(y*10+x+1, y*10+x, x_temp)
+                
+    for y in range(9):
+        x = random.randint(1,3)
+        while x < 10:
+            up_or_down = random.randint(0,1)
+            if x == 0:
+                if up_or_down == 0:
+                    result = result + template.format(y*10+x, (y+1)*10+x+1, random.randint(10,20))
+                else:
+                    result = result + template.format((y+1)*10+x+1, y*10+x, random.randint(10,20))
+            elif x == 9:
+                if up_or_down == 0:
+                    result = result + template.format(y*10+x, (y+1)*10+x-1, random.randint(10,20))
+                else:
+                    result = result + template.format((y+1)*10+x-1, y*10+x, random.randint(10,20))
+            else:
+                if up_or_down == 0:
+                    result = result + template.format(y*10+x, (y+1)*10+x+random.choice([-1,1]), random.randint(10,20))
+                else:
+                    result = result + template.format((y+1)*10+x+random.choice([-1,1]), y*10+x, random.randint(10,20))
+            x = x + random.randint(1,3)
+            
+    return result
 
-inhabitant_data = {
-    "inhabitant_id": np.arange(1, NUM_INHABITANTS + 1),
-    "name": generate_random_names(NUM_INHABITANTS),
-    "home_building_id": np.random.randint(1, 201, size=NUM_INHABITANTS),
-    "loc_building_id": np.random.randint(1, 201, size=NUM_INHABITANTS),
-    "workplace_type": generate_workplaces(NUM_INHABITANTS),  
-    "custody_status": 0, 
-    "dead": 0,
-    "gender": generate_genders(NUM_INHABITANTS)
-}
-
-
-df_inhabitants = pd.DataFrame(inhabitant_data)
-conn = mysql.connect('C:\Users\徐善若\Desktop\cs310')
-df_inhabitants.to_sql('inhabitant', conn, if_exists='replace', index=False)
-conn.close()
-df_inhabitants.head()
