@@ -1,7 +1,5 @@
 """The main entry point of the program."""
 
-import math, numpy as np
-import dsimulator.game as game
 import dsimulator.generator as gen
 import sys
 import os
@@ -50,7 +48,6 @@ def main() -> int:
 
     dpg.destroy_context()
 
-    
     return 0
 
 

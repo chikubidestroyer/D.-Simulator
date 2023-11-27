@@ -151,7 +151,9 @@ def lockdown(building_id: int) -> None:
         SET lockdown = 1
         WHERE building_id = {0};'''.format(building_id))
 
-def create_lockdown_buidling_view():
+
+def create_lockdown_buidling_view() -> None:
+    """Create a view of building that only contains building under lockdown."""
     con.execute('''
         CREATE VIEW lockdown_building AS
             SELECT building_id
@@ -306,6 +308,6 @@ def find_paths(start: int, end: int, time_limit: int) -> List[List[int]]:
 
     if start != end and w[start][end] < math.inf:
         result.append([end])
-        
+
     result.append("re")
     return result
