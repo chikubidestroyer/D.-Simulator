@@ -49,9 +49,12 @@ int main()
 		cost[e] = w;
 	}
 
-	memset(dist, 0x7f, sizeof(dist));
-	dijkstra(0);
-
-	for (int i = 0; i < n; ++i) std::cout << i << ": " << dist[i] << '\n';
+	for (int i = 0; i < n; ++i)
+	{
+		memset(dist, 0x7f, sizeof(dist));
+		memset(visited, 0, sizeof(visited));
+		dijkstra(i);
+		for (int j = 0; j < n; ++j) std::cout << i << " -> " << j << ": " << dist[j] << '\n';
+	}
 	return 0;
 }

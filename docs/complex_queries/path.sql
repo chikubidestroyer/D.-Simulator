@@ -45,12 +45,12 @@ INSERT INTO edge
 )
 SELECT * FROM bfs;//*/
 
-CREATE TEMP TABLE shortest_path(
-	vertex_id INTEGER NOT NULL,
-	dist      INTEGER,
-	visited   INTEGER NOT NULL CHECK(visited IN (0, 1)),
-	          PRIMARY KEY(vertex_id),
-	          FOREIGN KEY(vertex_id) REFERENCES vertex(verted_id)
+CREATE TEMP TABLE dist(
+	src     INTEGER NOT NULL,
+	dst     INTEGER NOT NULL,
+	d       INTEGER,
+	visited INTEGER NOT NULL CHECK(visited IN (0, 1)),
+	        PRIMARY KEY(src, dst)
 );
 
 PRAGMA recursive_triggers = ON;
@@ -62,35 +62,57 @@ PRAGMA recursive_triggers = ON;
 -- While there were implementations of Dijkstra in SQL online,
 -- I did not base my code off them anyways as SQLite doesn't have loops
 -- which were used in all these implementations.
-CREATE TEMP TRIGGER update_dist AFTER UPDATE OF visited ON shortest_path
-BEGIN
-	UPDATE shortest_path
-	   SET dist = n.d
-	  FROM (SELECT end AS v, (NEW.dist + cost_minute) AS d
-			  FROM edge
-			 WHERE start = NEW.vertex_id) AS n
-	 WHERE vertex_id = n.v AND visited = FALSE AND (dist IS NULL OR dist > n.d);
 
-	UPDATE shortest_path
+CREATE TEMP TRIGGER update_dist AFTER UPDATE OF visited ON dist
+BEGIN
+	UPDATE dist
+	   SET d = nd
+	  FROM (SELECT end AS nv, (NEW.d + cost_minute) AS nd
+	          FROM edge
+	         WHERE start = NEW.dst)
+	 WHERE src = NEW.src AND dst = nv AND visited = FALSE AND (d IS NULL OR d > nd);
+
+	UPDATE dist
 	   SET visited = TRUE
-	  FROM (SELECT vertex_id
-			  FROM shortest_path
-			 WHERE visited = FALSE AND dist = (SELECT MIN(dist)
-												 FROM shortest_path
-												WHERE visited = FALSE)) AS n
-	 WHERE shortest_path.vertex_id = n.vertex_id;
+	  FROM (SELECT dst AS ndst
+	          FROM dist
+	         WHERE src = NEW.src AND visited = FALSE AND d = (SELECT MIN(d)
+	                                                            FROM dist
+	                                                           WHERE visited = FALSE))
+	 WHERE src = NEW.src AND dst = ndst;
 END;
 
-INSERT INTO shortest_path
-	WITH RECURSIVE v(vertex_id) AS (
-	    SELECT 0
+INSERT INTO dist
+	SELECT a.vertex_id, b.vertex_id, NULL, FALSE
+	  FROM vertex AS a, vertex AS b;
 
-	     UNION ALL
+UPDATE dist
+   SET d = 0, visited = TRUE
+ WHERE src = dst;
 
-	    SELECT vertex_id + 1
-	      FROM v
-	     LIMIT 8
-	)
-	SELECT vertex_id, NULL, FALSE FROM v;
+-- CREATE TEMP TABLE src_dst(
+--     inhabitant_id INTEGER NOT NULL,
+--     src           INTEGER NOT NULL,
+--     dst           INTEGER NOT NULL,
+--     t_src         INTEGER NOT NULL,
+--     t_dst         INTEGER NOT NULL
+--                   PRIMARY KEY(inhabitant_id)
+-- );
 
-UPDATE shortest_path SET dist = 0, visited = TRUE WHERE vertex_id = 0;
+-- CREATE TEMP TABLE loc_time(
+--     inhabitant_id INTEGER NOT NULL,
+--     vertex_id     INTEGER NOT NULL,
+--     arrive        INTEGER NOT NULL,
+--     leave         INTEGER,
+--               PRIMARY KEY(inhabitant_id, vertex_id, arrive),
+-- );
+
+-- INSERT INTO loc_time
+--     WITH RECURSIVE lt(vertex_id, arrive, leave) AS (
+--         SELECT inhabitant_id, src, 0,
+--                ABS(RANDOM()) % (SELECT MIN(dist)
+--                                   FROM dist
+--                                  WHERE vertex_id = )
+--           FROM src_dst
+--     )
+--     SELECT vertex_id, arraive, leave FROM loc_time
