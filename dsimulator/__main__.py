@@ -13,7 +13,7 @@ faulthandler.enable()
 
 def main() -> int:
     """Initialize DearPyGui, load GUI fonts, invoke the main window, and handle cleanup."""
-    print(gen.generate_map())
+
     dpg.create_context()
 
     with dpg.font_registry():

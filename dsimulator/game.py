@@ -9,6 +9,7 @@ import math
 import os
 import sqlite3
 from dsimulator.defs import ROOT_DIR
+import dsimulator.generator as gen
 from typing import List, Tuple
 
 # For randomly generate testing names:
@@ -28,17 +29,17 @@ def init_game() -> None:
     con = sqlite3.connect(":memory:")
 
     with open(os.path.join(ROOT_DIR, 'DDL.sql')) as fd:
-        sqlFile = fd.read()
-    sqlCmds = sqlFile.split(';')
+        ddl = fd.read()
     with con:
-        for c in sqlCmds:
-            con.execute(c)
+        con.executescript(ddl)
 
     # Currently just inserting some testing data.
     # TODO: Implement procedural generation for the game world.
     with con:
-        cur = con.execute('INSERT INTO vertex (x, y) VALUES (1, 2)')
-        vertex_id = cur.lastrowid
+        cur = con.executescript(gen.generate_map())
+        # cur = con.execute('INSERT INTO vertex (x, y) VALUES (1, 2)')
+        # vertex_id = cur.lastrowid
+        vertex_id = 0
         con.execute(
             'INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)', (vertex_id, 'Home', 0))
 

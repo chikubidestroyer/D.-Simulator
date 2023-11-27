@@ -18,7 +18,8 @@ classifiers = [
     'Operating System :: OS Independent',
 ]
 dependencies = [
-	'dearpygui>=1.10.1'
+	'dearpygui>=1.10.1',
+	'numpy>=1.26.2'
 ]
 
 [project.scripts]
