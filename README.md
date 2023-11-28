@@ -42,7 +42,7 @@ dsimulator
 - [ ] Consider the uncertainty of the UI workload and address it towards the end.
 
 ### Database Setup
-- [ ] Create an SQLite database using the provided schema, ensuring all constraints and relationships are correctly implemented.
+- [x] Create an SQLite database using the provided schema, ensuring all constraints and relationships are correctly implemented.
 - [ ] Populate tables with initial data. Ensure diversity in characters, locations, and scenes for realism. Approximately 1000 records need to be populated (generate families, assign occupations, incomes, and addresses).
 
 ### Python Programming for Game Logic

@@ -49,8 +49,11 @@ def init_game() -> None:
 
         cur = con.execute(
             'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
-        con.execute('INSERT INTO inhabitant (name, home_building_id, loc_building_id, custody, dead) VALUES (?, ?, ?, ?, ?)',
-                    (''.join(random.choices(string.ascii_uppercase + string.digits, k=10)), vertex_id, vertex_id, 0, 0))
+        con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    (''.join(random.choices(string.ascii_uppercase + string.digits, k=4)),
+                     ''.join(random.choices(string.ascii_uppercase + string.digits, k=4)),
+                     vertex_id, vertex_id, 0, 0, 'm'))
 
 
 def close_game() -> None:
@@ -138,11 +141,12 @@ def delete_save(save_id: int) -> None:
 
 def list_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
     """Return all inhabitants' attribute names that are known by the player and the respective values."""
-    cur = con.execute('''SELECT inhabitant_id, name, h.building_name, workplace_id, custody, dead, gender
+    cur = con.execute('''SELECT inhabitant_id, first_name, last_name, h.building_name, workplace_id, custody, dead, gender
                            FROM inhabitant
                                 JOIN building AS h
                                 ON home_building_id = building_id''')
-    return ('inhabitant_id', 'name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), cur.fetchall()
+    return ('inhabitant_id', 'first_name', 'last_name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), \
+        cur.fetchall()
 
 
 def list_vertex() -> List[Tuple[int, int]]:
@@ -157,7 +161,7 @@ def list_edge() -> List[Tuple[int, int, int, int, int]]:
 
     As the map edges are added twice for two directions, only those with start < end will be considered.
     """
-    cur = con.execute('''SELECT s.x, s.y, e.x, e.y, cost_minute
+    cur = con.execute('''SELECT s.x, s.y, e.x, e.y, cost_min
                            FROM edge
                                 JOIN vertex AS s
                                 ON start = s.vertex_id

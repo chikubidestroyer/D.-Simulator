@@ -8,7 +8,7 @@ CREATE TABLE vertex(
 CREATE TABLE edge(
 	start       INTEGER NOT NULL,
 	end         INTEGER NOT NULL,
-	cost_minute INTEGER NOT NULL CHECK(cost_minute > 0),
+	cost_min    INTEGER NOT NULL CHECK(cost_min > 0),
 	            PRIMARY KEY(start, end),
 	            FOREIGN KEY(start) REFERENCES vertex(vertex_id),
 	            FOREIGN KEY(end)   REFERENCES vertex(vertex_id)
@@ -61,6 +61,8 @@ However, that post did not provide any implementations.
 While there were implementations of Dijkstra in SQL online,
 I did not base my code off them anyways as SQLite doesn't have loops
 which were used in all these implementations.
+
+TODO: Exclude buildings under lockdown.
 */
 
 PRAGMA recursive_triggers = ON; -- Need to turn this on manually.
@@ -82,7 +84,7 @@ BEGIN
 	-- Update the shortest distance to the neighbor of this vertex.
 	UPDATE dist
 	   SET d = nd
-	  FROM (SELECT end AS nv, (NEW.d + cost_minute) AS nd
+	  FROM (SELECT end AS nv, (NEW.d + cost_min) AS nd
 	          FROM edge
 	         WHERE start = NEW.dst)
 	 WHERE src = NEW.src AND dst = nv AND visited = FALSE AND (d IS NULL OR d > nd);
@@ -153,13 +155,13 @@ BEGIN
 	-- and plus the random waiting time does not exceed the constraint.
 	-- Then randomly choose one plausible edge to go through.
 	INSERT INTO loc_time
-		  SELECT inhabitant_id, end, NEW.leave + cost_minute,
-		         NEW.leave + cost_minute + ABS(RANDOM()) % (t_dst - (NEW.leave + cost_minute) + 1
+		  SELECT inhabitant_id, end, NEW.leave + cost_min,
+		         NEW.leave + cost_min + ABS(RANDOM()) % (t_dst - (NEW.leave + cost_min) + 1
 		         - (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = src_dst.dst))
 		    FROM src_dst, edge
 		   WHERE inhabitant_id = NEW.inhabitant_id
 		         AND start = NEW.vertex_id
-		         AND NEW.leave + cost_minute +
+		         AND NEW.leave + cost_min +
 		         (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = src_dst.dst)
 		         <= t_dst
 		ORDER BY RANDOM()

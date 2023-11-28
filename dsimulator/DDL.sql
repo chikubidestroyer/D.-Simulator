@@ -8,7 +8,7 @@ CREATE TABLE vertex(
 CREATE TABLE edge(
 	start       INTEGER NOT NULL,
 	end         INTEGER NOT NULL,
-	cost_minute INTEGER NOT NULL CHECK(cost_minute > 0),
+	cost_min    INTEGER NOT NULL CHECK(cost_min > 0),
 	            PRIMARY KEY(start, end),
 	            FOREIGN KEY(start) REFERENCES vertex(vertex_id),
 	            FOREIGN KEY(end)   REFERENCES vertex(vertex_id)
@@ -17,7 +17,7 @@ CREATE TABLE edge(
 CREATE TABLE building(
 	building_id   INTEGER NOT NULL,
 	building_name TEXT NOT NULL,
-	lockdown      INTEGER NOT NULL CHECK(lockdown IN (0, 1)),
+	lockdown      INTEGER DEFAULT FALSE NOT NULL CHECK(lockdown IN (FALSE, TRUE)),
 	              FOREIGN KEY(building_id) REFERENCES vertex(vertex_id),
 	              PRIMARY KEY(building_id)
 );
@@ -42,6 +42,8 @@ CREATE TABLE occupation(
 	occupation_id   INTEGER NOT NULL,
 	occupation_name TEXT    NOT NULL,
 	income          INTEGER NOT NULL CHECK(income > 0),
+	arrive_min      INTEGER NOT NULL,
+	leave_min       INTEGER NOT NULL,
 	                PRIMARY KEY(occupation_id)
 );
 
@@ -57,13 +59,14 @@ CREATE TABLE workplace(
 
 CREATE TABLE inhabitant(
 	inhabitant_id    INTEGER NOT NULL,
-	name             TEXT    NOT NULL,
+	first_name       TEXT    NOT NULL,
+	last_name        TEXT    NOT NULL,
 	home_building_id INTEGER NOT NULL,
 	loc_building_id  INTEGER NOT NULL,
-	workplace_id     INTEGER,
-	custody          INTEGER NOT NULL CHECK(custody IN (0, 1)),
-	dead             INTEGER NOT NULL CHECK(dead IN (0, 1)),
-	gender           TEXT             CHECK(gender IN('m','f')),
+	workplace_id     INTEGER DEFAULT NULL,
+	custody          INTEGER DEFAULT FALSE NOT NULL CHECK(custody IN (FALSE, TRUE)),
+	dead             INTEGER DEFAULT FALSE NOT NULL CHECK(dead IN (FALSE, TRUE)),
+	gender           TEXT    NOT NULL CHECK(gender IN('m','f')),
 	                 PRIMARY KEY(inhabitant_id),
 	                 FOREIGN KEY(home_building_id) REFERENCES home(home_building_id),
 	                 FOREIGN KEY(loc_building_id)  REFERENCES vertex(vertex_id),
@@ -80,27 +83,26 @@ CREATE TABLE relationship(
 );
 
 CREATE TABLE victim(
-	victim_id         INTEGER NOT NULL,
-	day_of_death      INTEGER NOT NULL,
-	minute_of_death   INTEGER NOT NULL,
-	place_of_death_id INTEGER NOT NULL,
-	                  PRIMARY KEY(victim_id),
-	                  FOREIGN KEY(victim_id)         REFERENCES inhabitant(inhabitant_id)
-	                  FOREIGN KEY(place_of_death_id) REFERENCES vertex(vertex_id)
+	victim_id       INTEGER NOT NULL,
+	day_of_death    INTEGER NOT NULL,
+	min_of_death    INTEGER NOT NULL,
+	scene_vertex_id INTEGER NOT NULL,
+	                PRIMARY KEY(victim_id),
+	                FOREIGN KEY(victim_id)       REFERENCES inhabitant(inhabitant_id),
+	                FOREIGN KEY(scene_vertex_id) REFERENCES vertex(vertex_id)
 );
 
 CREATE TABLE killer(
-	killer_id    INTEGER NOT NULL,
-	chara        INTEGER NOT NULL,
-	chara_weight INTEGER NOT NULL,
-	             PRIMARY KEY(killer_id, chara),
-	             FOREIGN KEY(chara) REFERENCES killer_chara(chara_id)
+	killer_id INTEGER NOT NULL,
+	          PRIMARY KEY(killer_id)
 );
 
 CREATE TABLE killer_chara(
-	chara_id INTEGER NOT NULL,
+	killer_id         INTEGER NOT NULL,
 	chara_description TEXT NOT NULL,
-	PRIMARY KEY(chara_id)
+	chara_weight      INTEGER NOT NULL,
+	                  PRIMARY KEY(killer_id, chara_description)
+	                  FOREIGN KEY(killer_id) REFERENCES killer(killer_id)
 );
 
 CREATE TABLE suspect(
@@ -109,12 +111,12 @@ CREATE TABLE suspect(
 );
 
 CREATE TABLE status(
-	single             INTEGER DEFAULT 0 NOT NULL CHECK(single = 0),
-	day                INTEGER NOT NULL,
-	resignation_day    INTEGER NOT NULL,
-	kira_killer_id     INTEGER NOT NULL,
-	kira_inhabitant_id INTEGER NOT NULL,
-	                   PRIMARY KEY(single),
-	                   FOREIGN KEY(kira_killer_id)     REFERENCES killer(killer_id)
-	                   FOREIGN KEY(kira_inhabitant_id) REFERENCES inhabitant(inhabitant_id)
+	single               INTEGER DEFAULT 0 NOT NULL CHECK(single = 0),
+	day                  INTEGER DEFAULT 1 NOT NULL,
+	resignation_day      INTEGER NOT NULL,
+	killer_id            INTEGER NOT NULL,
+	killer_inhabitant_id INTEGER NOT NULL,
+	                     PRIMARY KEY(single),
+	                     FOREIGN KEY(killer_id)            REFERENCES killer(killer_id)
+	                     FOREIGN KEY(killer_inhabitant_id) REFERENCES inhabitant(inhabitant_id)
 ) WITHOUT ROWID;
