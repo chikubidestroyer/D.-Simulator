@@ -22,10 +22,13 @@ num_vertex = 0  # number of vertex in game
 distance_graph = None  # directed graph for map in the game, calculated in floyd_warshall
 pi_graph = None  # parent graph indicating path for SP
 
+game_day = 0
+resignation_day = None
 
 def init_game() -> None:
     """Create the schema for the in-memory game state database, then populate it procedurally."""
     global con
+    global game_day
     con = sqlite3.connect(":memory:")
 
     with open(os.path.join(ROOT_DIR, 'DDL.sql')) as fd:
@@ -135,9 +138,24 @@ def delete_save(save_id: int) -> None:
 
     os.remove(to_save_path(save_id))
 
+        con.execute('INSERT INTO status VALUES (0,0,10,0,0)')
+        
+        # TODO: implement selection of killer from inhabitant and killer relation based on matching characteristics
+        select_killer()
+        
+        resignation_day = con.execute("SELECT resignation_day FROM status").fetchall()[0][0]
+            
+        while game_day != resignation_day:
+            # TODO: implement calculate_path_for_day that calculates path for all inhabitants in this day
+            # TODO: implement simulation of the detective
+            calculate_path_for_day()
+            detective_simulation()
+            day+=1
+            con.execute('UPDATE status SET day = day+1')
 
 def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
-    """Return known inhabitant attribute names and values."""
+    """Return known inhabitant attribute names and values"""
+    global con
     cur = con.execute('''SELECT inhabitant_id, name, h.building_name, workplace_id, custody, dead, gender
                          FROM inhabitant
                               JOIN building AS h
@@ -146,15 +164,15 @@ def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
 
 
 def lockdown(building_id: int) -> None:
-    """Set given building to lockdown."""
+    """Set given building to lockdown"""
+    global con
     con.execute('''
         UPDATE building
         SET lockdown = 1
         WHERE building_id = {0};'''.format(building_id))
 
-
 def create_lockdown_buidling_view() -> None:
-    """Create a view of building that only contains building under lockdown."""
+    global con
     con.execute('''
         CREATE VIEW lockdown_building AS
             SELECT building_id
@@ -164,7 +182,8 @@ def create_lockdown_buidling_view() -> None:
 
 
 def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
-    """Return the list of inhabitants having relations with subject."""
+    """Returns list of inhabitants having relations with subject"""
+    global con
     cur = con.execute('''
         SELECT object_id, description
         FROM relationship
@@ -199,7 +218,8 @@ def query_vertex_weight() -> List[List[int]]:
     """
     global num_vertex
     global w
-
+    global con
+    
     cur = con.execute('''
         SELECT count(*) FROM vertex''')
     num_vertex = cur.fetchall()[0]  # the number of vertex
@@ -229,6 +249,7 @@ def floyd_warshall(weight: List[List[int]]) -> None:
     Set global Pi indicating path.
     Should be ran at the start of game after query_vertex_weight.
     """
+    global con
     global w
     global num_vertex
     global distance_graph
@@ -281,6 +302,7 @@ def find_paths(start: int, end: int, time_limit: int) -> List[List[int]]:
     end (int): vertex_id of the designation
     time_limit (int): within how many minutes
     """
+    global con
     global num_vertex
     global pi_graph
     global distance_graph
@@ -312,3 +334,51 @@ def find_paths(start: int, end: int, time_limit: int) -> List[List[int]]:
 
     result.append("re")
     return result
+
+def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None, gender = "gender", dead = None, home_building_name = "home_building_name", custody = None, suspect = None):
+    """Returns the query result inputted by the player
+    """
+    global con
+    required_tables = ""
+    required_predicate = ""
+    if income_lo != 0 or income_hi != math.inf or occupation != None:
+        required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation "
+        if income_hi != math.inf:
+            required_predicate = required_predicate + " AND income >= " + str(income_lo) + " AND income <= " + str(income_hi)
+        else:
+            required_predicate = required_predicate + " AND income >= " + str(income_lo)
+        
+        if occupation != None:
+            required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
+        
+    if dead == False:
+        required_predicate = required_predicate + " AND dead = 0"
+    elif dead == True:
+        required_predicate = required_predicate + " AND dead = 1"
+    if custody == False:
+        required_predicate = required_predicate + " AND custody = 0"
+    elif custody == True:
+        required_predicate = required_predicate + " AND custody = 0"
+    
+    if suspect == True:
+        required_predicate = required_predicate + " AND EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
+    elif suspect == False:
+        required_predicate = required_predicate + " AND NOT EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
+        
+    
+        
+    
+    '''
+    print("""
+                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
+                """
+                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
+    '''
+    cur = con.execute("""
+                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
+                """
+                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
+    return cur.fetchall()
+    
