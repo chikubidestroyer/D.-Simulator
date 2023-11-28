@@ -136,13 +136,35 @@ def delete_save(save_id: int) -> None:
     os.remove(to_save_path(save_id))
 
 
-def query_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
-    """Return known inhabitant attribute names and values."""
+def list_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
+    """Return all inhabitants' attribute names that are known by the player and the respective values."""
     cur = con.execute('''SELECT inhabitant_id, name, h.building_name, workplace_id, custody, dead, gender
-                         FROM inhabitant
-                              JOIN building AS h
-                              ON home_building_id = building_id''')
+                           FROM inhabitant
+                                JOIN building AS h
+                                ON home_building_id = building_id''')
     return ('inhabitant_id', 'name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), cur.fetchall()
+
+
+def list_vertex() -> List[Tuple[int, int]]:
+    """Return a list of coordinates for all vertices."""
+    cur = con.execute('SELECT x, y FROM vertex')
+    return cur.fetchall()
+
+
+def list_edge() -> List[Tuple[int, int, int, int, int]]:
+    """
+    Return a list of start-end coordinates and cost for all edges in one direction.
+
+    As the map edges are added twice for two directions, only those with start < end will be considered.
+    """
+    cur = con.execute('''SELECT s.x, s.y, e.x, e.y, cost_minute
+                           FROM edge
+                                JOIN vertex AS s
+                                ON start = s.vertex_id
+                                JOIN vertex AS e
+                                ON end = e.vertex_id
+                          WHERE start < end''')
+    return cur.fetchall()
 
 
 def lockdown(building_id: int) -> None:

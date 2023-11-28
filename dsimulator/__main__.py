@@ -1,10 +1,9 @@
 """The main entry point of the program."""
 
-import dsimulator.generator as gen
 import sys
 import os
 import dearpygui.dearpygui as dpg
-from dsimulator.defs import RES_DIR
+from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT, RES_DIR
 
 # For handling segfaults such as those coming from DearPyGui.
 import faulthandler
@@ -13,12 +12,11 @@ faulthandler.enable()
 
 def main() -> int:
     """Initialize DearPyGui, load GUI fonts, invoke the main window, and handle cleanup."""
-
     dpg.create_context()
 
     with dpg.font_registry():
         default_font = dpg.add_font(os.path.join(
-            RES_DIR, 'VenrynSans-Regular.ttf'), 64)
+            RES_DIR, 'VenrynSans-Regular.ttf'), 42)
     dpg.bind_font(default_font)
 
     # Callback is managed manually in the rendering loop,
@@ -31,8 +29,8 @@ def main() -> int:
     # Segfaults have happened before with this turned off!
     dpg.configure_app(manual_callback_management=True)
 
-    dpg.create_viewport(title='D. Simulator', width=1920,
-                        height=1080, resizable=False, decorated=False)
+    dpg.create_viewport(title='D. Simulator', width=MAIN_WIDTH,
+                        height=MAIN_HEIGHT, resizable=False, decorated=False)
 
     from dsimulator.ui.main import main_window
     dpg.show_item(main_window)
