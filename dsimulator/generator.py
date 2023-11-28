@@ -2,7 +2,7 @@
 
 import numpy as np
 import random
-from typing import List
+from typing import List, Tuple
 
 
 np.random.seed(0)
@@ -14,11 +14,11 @@ CUSTODY_VALUES = [0, 1]
 DEAD_VALUES = [0, 1]
 
 
-def generate_random_names(num_names: int) -> List[str]:
-    """Randomly generate a list of full names from a predefined list of first and last names."""
+def generate_random_names(num_names: int) -> List[Tuple[str, str]]:
+    """Randomly generate a list of first-last name pairs from a predefined list of first and last names."""
     first_names = ["Ivan", "Anastasia", "Mikhail", "Ekaterina", "Dmitry", "Olga", "Alexei", "Svetlana", "Sergei", "Irina", "Amir", "Fatima", "Omar", "Layla", "Ali", "Zahra", "Yasir", "Noor", "Samir", "Huda", "Aarav", "Priya", "Vihaan", "Diya", "Arjun", "Anika", "Ishaan", "Meera", "Dhruv", "Rani", "Haruto", "Yuki", "Mei", "Hiroshi", "Sakura", "Daiki", "Hana", "Takumi", "Aiko ", "Kenji ", "John", "Jane", "Chris", "Anna", "Tom", "Emily", "Mike", "Sarah", "Robert", "Laura"]
     last_names = ["Smirnov", "Ivanov", "Kuznetsov", "Sokolov", "Popov", "Lebedev", "Kozlov", "Novikov", "Morozov", "Petrov", "Al-Sayed", "Hassan", "Abdullah", "Al-Amir", "Farid", "Mahmoud", "Fakhoury", "Najjar", "Saleh", "Barakat", "Patel", "Singh", "Kumar", "Sharma", "Gupta", "Mehta", "Joshi", "Shah", "Iyer", "Reddy", "Kim", "Lee", "Nguyen", "Chen", "Wang", "Li", "Yoshida", "Tanaka", "Zhang", "Huang", "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson"]
-    return [random.choice(first_names) + " " + random.choice(last_names) for _ in range(num_names)]
+    return [(random.choice(first_names), random.choice(last_names)) for _ in range(num_names)]
 
 # def generate_workplaces(num_inhabitants, num_workplaces):
     # return [random.randint(1, num_workplaces) for _ in range(num_inhabitants)]

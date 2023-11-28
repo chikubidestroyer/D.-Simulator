@@ -12,10 +12,6 @@ from dsimulator.defs import ROOT_DIR
 import dsimulator.generator as gen
 from typing import List, Tuple
 
-# For randomly generate testing names:
-import string
-import random
-
 con = None
 w = None  # weight graph of edges
 num_vertex = 0  # number of vertex in game
@@ -47,13 +43,12 @@ def init_game() -> None:
             'INSERT INTO income_range (low, high) VALUES (1000, 2000)')
         income_level = cur.lastrowid
 
+        first_name, last_name = gen.generate_random_names(1)[0]
         cur = con.execute(
             'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
         con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
                                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                    (''.join(random.choices(string.ascii_uppercase + string.digits, k=4)),
-                     ''.join(random.choices(string.ascii_uppercase + string.digits, k=4)),
-                     vertex_id, vertex_id, 0, 0, 'm'))
+                    (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
 
 
 def close_game() -> None:
