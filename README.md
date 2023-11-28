@@ -35,7 +35,7 @@ dsimulator
 ## TODO
 
 ### User Interface Design
-- [ ] Develop a visual user interface to represent vertex and edge tables, displaying their positions and connections. This could be a city map where each vertex represents a point of interest, and edges represent paths between them.
+- [x] Develop a visual user interface to represent vertex and edge tables, displaying their positions and connections. This could be a city map where each vertex represents a point of interest, and edges represent paths between them.
 - [ ] Display character and building information, showcasing details from the building, home, occupation, workplace, and inhabitant tables. This may include character profiles, homes, workplaces, etc.
 - [ ] Implement a system to show relationships between characters (relationship table) and track investigation status (status table) such as suspects, victims, and key events.
 - [ ] Provide an interface overview as per the submitted proposal.
@@ -50,7 +50,7 @@ dsimulator
 - [ ] Develop a simulation system for roadblocks or impassable areas affecting the edge table.
 - [ ] Ensure real-time interaction and updates between in-game actions (interrogation, evidence collection) and the database.
 - [ ] Calculate killer movement paths and required time.
-- [ ] Consider implementing a possible save/load mechanism.
+- [x] Consider implementing a possible save/load mechanism.
 - [ ] Define characteristics of the killer and ordinary residents and their interactions.
 - [ ] Implement the sheriff's interrogation skills, road closure abilities, and suspect apprehension functionality.
 - [ ] If interrogation functionality is implemented, hide certain information from players and implement related features.
