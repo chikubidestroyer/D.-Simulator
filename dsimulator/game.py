@@ -381,4 +381,18 @@ def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None
                 """
                 WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
     return cur.fetchall()
+
+def kill_inhabitant():
+    with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
+        script = fd.read()
+    with con:
+        cur = con.executescript(script)
+        A = cur.fetchall()
+        killed_inhab = A[0][0]
+        day_of_death = con.execute("SELECT `day` FROM status").fetchall()[0][0]
+        min_of_death = A[0][2]
+        scene_vertex = A[0][1]
+        con.execute("UPDATE inhabitant SET dead = 1 WHERE inhabitant_id = ?", (killed_inhab))
+        con.execute("INSERT INTO victim VALUES (?,?,?,?)", (killed_inhab, day_of_death, min_of_death, scene_vertex))
+        
     
