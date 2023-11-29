@@ -14,6 +14,8 @@ CREATE TABLE edge(
 	            FOREIGN KEY(end)   REFERENCES vertex(vertex_id)
 );
 
+CREATE INDEX idx_edge ON edge(start, end);
+
 CREATE TABLE building(
 	building_id   INTEGER NOT NULL,
 	building_name TEXT NOT NULL,

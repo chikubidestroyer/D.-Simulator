@@ -3,7 +3,7 @@
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 import dsimulator.ui.save as save
-from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge
+from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge, test
 from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import math
 
@@ -37,6 +37,7 @@ with dpg.window() as game_window:
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save Game', callback=to_save)
         dpg.add_button(label='Quit to Main Menu', callback=to_main)
+        dpg.add_button(label='test', callback=test)
     dpg.hide_item(game_window)
 
 

@@ -5,7 +5,6 @@ The database connection is stored as a global variable.
 Functions are provided to initialize, manipulate, and query the game state database.
 """
 
-import math
 import os
 import sqlite3
 from dsimulator.defs import ROOT_DIR
@@ -24,10 +23,7 @@ def init_game() -> None:
     global con
     con = sqlite3.connect(":memory:")
 
-    with open(os.path.join(ROOT_DIR, 'DDL.sql')) as fd:
-        ddl = fd.read()
-    with con:
-        con.executescript(ddl)
+    _run_script('DDL.sql')
 
     # Currently just inserting some testing data.
     # TODO: Implement procedural generation for the game world.
@@ -211,125 +207,66 @@ def modify_suspect(inhabitant_id: int) -> None:
             WHERE inhabitant_id = {0}'''.format(inhabitant_id))
 
 
-def query_vertex_weight() -> List[List[int]]:
-    """
-    Set global variable vertex weight graph/array.
-
-    Used for floyd_warshall.
-    Should be ran at the start of the game
-    """
-    global num_vertex
-    global w
-
-    cur = con.execute('''
-        SELECT count(*) FROM vertex''')
-    num_vertex = cur.fetchall()[0]  # the number of vertex
-
-    # weight defaulted to inf
-    w = [[math.inf for i in range(num_vertex)] for i in range(num_vertex)]
-
-    for i in range(num_vertex):
-        # weight of vertex to itself is 0
-        w[i][i] = 0
-
-    cur = con.execute('''
-        SELECT * FROM edge''')
-    edge_query = cur.fetchall()
-
-    for edge in edge_query:
-        # assigning weights based on query results
-        w[edge[0]][edge[1]] = edge[2]
-
-    return w
+def _query_shortest_path() -> None:
+    """Get the shortest path between all vertex pairs in a temp table `dist`."""
+    with con:
+        _run_script('shortest_path.sql')
 
 
-def floyd_warshall(weight: List[List[int]]) -> None:
-    """
-    Set global distance_graph (weight of shortest path).
-
-    Set global Pi indicating path.
-    Should be ran at the start of game after query_vertex_weight.
-    """
-    global w
-    global num_vertex
-    global distance_graph
-    global pi_graph
-
-    w = weight
-    num_vertex = len(w)
-
-    D = w.copy()
-    PI = [[None for i in range(num_vertex)] for i in range(num_vertex)]
-
-    # initializing pi_graph by recognizing adjacent vertex
-    for i in range(num_vertex):
-        for j in range(num_vertex):
-            if i != j and w[i][j] < math.inf:
-                PI[i][j] = i  # vertex j is adjacent to vertex i
-
-    for k in range(num_vertex):
-        tempD = [[0 for i in range(num_vertex)] for i in range(num_vertex)]
-        tempPi = [[0 for i in range(num_vertex)] for i in range(num_vertex)]
-        for i in range(num_vertex):
-            for j in range(num_vertex):
-                tempD[i][j] = min(D[i][j], D[i][k] + D[k][j])
-                if D[i][j] > D[i][k] + D[k][j]:
-                    tempPi[i][j] = PI[k][j]
-                else:
-                    tempPi[i][j] = PI[i][j]
-        D = tempD
-        PI = tempPi
-
-    # Sets distance_graph and pi_graph
-    distance_graph = D
-    pi_graph = PI
-
-    print('D : ')
-    for d in D:
-        print(d)
-
-    print('PI : ')
-    for pi in PI:
-        print(pi)
+def _init_loc_time() -> None:
+    """Initialize the `src_dst` and `loc_time` table."""
+    with con:
+        _run_script('init_loc_time.sql')
 
 
-def find_paths(start: int, end: int, time_limit: int) -> List[List[int]]:
-    """
-    Return a 2D list, each list is a path indicated by a sequence of vertex_ids.
+def _query_loc_time() -> None:
+    """Insert the location-time tuples into `loc_time`, specifying paths that satisfy the constraints given in `src_dst`."""
+    with con:
+        _run_script('query_loc_time.sql')
 
-    Args:
-    start (int): vertex_id where the path starts
-    end (int): vertex_id of the designation
-    time_limit (int): within how many minutes
-    """
-    global num_vertex
-    global pi_graph
-    global distance_graph
-    global w
 
-    result = []
+def _query_loc_time_inhabitant() -> None:
+    """Insert the location-time tuples of all inhabitants into `loc_time`."""
+    _query_shortest_path()
 
-    if distance_graph[start][end] > time_limit:
-        return result
+    _init_loc_time()
 
-    for inter_vertex in range(num_vertex):
-        if inter_vertex == start:
-            continue
-        taken_time = w[start][inter_vertex]
+    # Currently, the inhabitant may leave home after 7:00 (420 mins)
+    # and must return home before 19:00 (1140 mins).
+    # Also only those with a workplace is considered.
+    with con:
+        con.execute('''INSERT INTO src_dst (inhabitant_id, src, dst, t_src, t_dst)
+                           WITH t AS(
+                               SELECT inhabitant_id, home_building_id, workplace_building_id, arrive_min, leave_min
+                                 FROM inhabitant
+                                      JOIN workplace
+                                      USING(workplace_id)
+                                      JOIN occupation
+                                      USING(occupation_id)
+                                WHERE workplace_id IS NOT NULL
+                           )
+                           SELECT inhabitant_id, home_building_id, workplace_building_id, 420, arrive_min
+                             FROM t
+                            UNION
+                           SELECT inhabitant_id, workplace_building_id, home_building_id, leave_min, 1140
+                             FROM t''')
 
-        if taken_time == math.inf:
-            continue
+    _query_loc_time()
 
-        if taken_time < time_limit:
-            # Recursively retrieve the subpaths
-            sub_paths = find_paths(inter_vertex, end, time_limit - taken_time)
-            if sub_paths == []:
-                continue
-            for sub_path in sub_paths:
-                result.append([inter_vertex] + sub_path)
 
-    if start != end and w[start][end] < math.inf:
-        result.append([end])
+def _run_script(file_name: str) -> None:
+    with open(os.path.join(ROOT_DIR, file_name)) as fd:
+        script = fd.read()
+    with con:
+        con.executescript(script)
 
-    result.append("re")
-    return result
+
+def test() -> None:
+    """Test _query_loc_time_inhabitant()."""
+    _query_loc_time_inhabitant()
+    cur = con.execute('SELECT * FROM dist LIMIT 10')
+    print("dist:")
+    print(cur.fetchall())
+    cur = con.execute('SELECT * FROM loc_time LIMIT 10')
+    print("loc_time:")
+    print(cur.fetchall())
