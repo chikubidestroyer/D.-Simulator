@@ -270,3 +270,51 @@ def test() -> None:
     cur = con.execute('SELECT * FROM loc_time LIMIT 10')
     print("loc_time:")
     print(cur.fetchall())
+
+def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None, gender = "gender", dead = None, home_building_name = "home_building_name", custody = None, suspect = None):
+    """Returns the query result inputted by the player
+    """
+    global con
+    required_tables = ""
+    required_predicate = ""
+    if income_lo != 0 or income_hi != math.inf or occupation != None:
+        required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation "
+        if income_hi != math.inf:
+            required_predicate = required_predicate + " AND income >= " + str(income_lo) + " AND income <= " + str(income_hi)
+        else:
+            required_predicate = required_predicate + " AND income >= " + str(income_lo)
+        
+        if occupation != None:
+            required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
+        
+    if dead == False:
+        required_predicate = required_predicate + " AND dead = 0"
+    elif dead == True:
+        required_predicate = required_predicate + " AND dead = 1"
+    if custody == False:
+        required_predicate = required_predicate + " AND custody = 0"
+    elif custody == True:
+        required_predicate = required_predicate + " AND custody = 0"
+    
+    if suspect == True:
+        required_predicate = required_predicate + " AND EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
+    elif suspect == False:
+        required_predicate = required_predicate + " AND NOT EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
+        
+    
+        
+    
+    '''
+    print("""
+                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
+                """
+                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
+    '''
+    cur = con.execute("""
+                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
+                """
+                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
+    return cur.fetchall()
+    
