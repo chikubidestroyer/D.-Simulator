@@ -1,18 +1,37 @@
 -- uses temp table loct_time from path.sql
 -- this version is NOT TESTED
 
+DROP TEMP TABLE IF EXISTS weighed_pot_victim;
 CREATE TEMP table weighed_pot_victim (
   inhabitant_id INTEGER,
   description TEXT,
-  chara_weight INTEGER
+  chara_weight INTEGER, 
+  vertex_id INTEGER,
 );
+
+DROP TEMP TABLE IF EXISTS pot_victim;
+CREATE TEMP TABLE pot_victim(
+    inhabitant_id INTEGER,
+    vertex_id INTEGER,
+    start_min INTEGER,
+    end_min INTEGER
+)
+
+INSERT INTO pot_victim
+SELECT DISTINCT B.inhabitant_id, B.vertex_id, MAX(A.arrive, B.arrive), MIN(A.leave, B.leave)
+FROM status, loc_time AS A, loc_time AS B
+WHERE A.inhabitant_id = status.killer_inhabitant_id AND
+  		A.vertex_id = B.vertex_id AND
+  		A.arrive <= B.leave AND
+		A.leave >= B.arrive
+
 
 INSERT INTO weighed_pot_victim
 WITH pot_victim AS (
-	SELECT DISTINCT B.inhabitant_id
+	SELECT DISTINCT B.inhabitant_id, B.vertex_id
   	FROM status, loc_time AS A, loc_time AS B
   	WHERE A.inhabitant_id = status.killer_inhabitant_id AND
-  			A.vertex = B.vertex AND
+  			A.vertex_id = B.vertex_id AND
   			A.arrive <= B.leave AND
   			A.leave >= B.arrive
 ),
@@ -20,7 +39,7 @@ killer_info AS (
 	SELECT inhabitant.* FROM status, inhabitant
   	WHERE status.killer_inhabitant_id = inhabitant.inhabitant_id
 )
-SELECT inhabitant_id, description, chara_weight
+SELECT inhabitant_id, description, chara_weight, vertex_id
 FROM pot_victim NATURAL JOIN inhabitant AS i NATURAL JOIN home AS h NATURAL JOIN workplace, 
 	killer_chara AS k, status
 WHERE status.killer_id = k.killer_id AND
@@ -42,10 +61,12 @@ WHERE status.killer_id = k.killer_id AND
           		relationship.description = "mother"
         );
 
-SELECT inhabitant_id
-FROM (SELECT inhabitant_id, sum(chara_weight) AS weight_sum
+SELECT inhabitant_id, vertex_id AS scene_vertex_id, (ABS(RANDOM())%(end_min-start_min) + start_min) AS min_of_death
+FROM (SELECT inhabitant_id, vertex_id, sum(chara_weight) AS weight_sum
 	FROM weighed_pot_victim
-	GROUP BY inhabitant_id) AS sub
-ORDER BY weight_sum;
+	GROUP BY inhabitant_id, vertex_id) AS sub, pot_victim
+WHERE sub.inhabitant_id = pot_victim.inhabitant_id AND
+        sub.vertex_id = pot_victim.vertex_id
+ORDER BY weight_sum DESC;
 
         

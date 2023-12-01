@@ -63,15 +63,18 @@ def generate_inhabitant(num_inhab = 1000) -> str:
 
 def generate_relationship():
         
-def generate_killer_info():
+def generate_test_killer():
     ''' generate only one killer for testing purposes'''
-    global con
     result = "INSERT INTO killer VALUES(0);\n"
     template = "INSERT killer_chara VALUES(0, {0}, {1});\n"
-    result = result + template.format("rapist", 10)
+    result = result + template.format("rapist", 15)
     result = result + template.format("high income", 5)
-    result = result + template.format("")
-        
+    result = result + template.format("colleague", 10)
+    return result
+
+def init_status():
+    '''initialized to constant for tests'''
+    return "INSERT INTO status VALUES(0, 1, 15, 0, 1000);\n"
         
             
 
