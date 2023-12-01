@@ -3,7 +3,7 @@
 import numpy as np
 import random
 from typing import List, Tuple
-
+from faker import Faker
 
 np.random.seed(0)
 
@@ -13,22 +13,67 @@ GENDERS = ['m', 'f']
 CUSTODY_VALUES = [0, 1]
 DEAD_VALUES = [0, 1]
 
+con = None
 
-def generate_random_names(num_names: int) -> List[Tuple[str, str]]:
-    """Randomly generate a list of first-last name pairs from a predefined list of first and last names."""
-    first_names = ["Ivan", "Anastasia", "Mikhail", "Ekaterina", "Dmitry", "Olga", "Alexei", "Svetlana", "Sergei", "Irina", "Amir", "Fatima", "Omar", "Layla", "Ali", "Zahra", "Yasir", "Noor", "Samir", "Huda", "Aarav", "Priya", "Vihaan", "Diya", "Arjun", "Anika", "Ishaan", "Meera", "Dhruv", "Rani", "Haruto", "Yuki", "Mei", "Hiroshi", "Sakura", "Daiki", "Hana", "Takumi", "Aiko ", "Kenji ", "John", "Jane", "Chris", "Anna", "Tom", "Emily", "Mike", "Sarah", "Robert", "Laura"]
-    last_names = ["Smirnov", "Ivanov", "Kuznetsov", "Sokolov", "Popov", "Lebedev", "Kozlov", "Novikov", "Morozov", "Petrov", "Al-Sayed", "Hassan", "Abdullah", "Al-Amir", "Farid", "Mahmoud", "Fakhoury", "Najjar", "Saleh", "Barakat", "Patel", "Singh", "Kumar", "Sharma", "Gupta", "Mehta", "Joshi", "Shah", "Iyer", "Reddy", "Kim", "Lee", "Nguyen", "Chen", "Wang", "Li", "Yoshida", "Tanaka", "Zhang", "Huang", "Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Garcia", "Rodriguez", "Wilson"]
-    return [(random.choice(first_names), random.choice(last_names)) for _ in range(num_names)]
+def generate_inhabitant(num_inhab = 1000) -> str:
+    global con
+    result = ""
+    template = "INSERT INTO inhabitant VALUES ({0},{1},{2},{3},{4},{5},0,0,{6});\n"
+    # workplace data should be inserted before this function is called
+    workplace_list = con.execute("SELECT * FROM workplace")
+    fk = Faker('en_US') # use english names as this shall be an American town
+    for i in range(num_inhab-1):
+        gender = random.uniform(0,1)
+        sex = None
+        first_name = None
+        if gender < 0.5:
+            # generate male inhabitant
+            sex = "m"
+            first_name = fk.first_name_male()
+        else:
+            # generate female inhabitant
+            sex = "f"
+            first_name = fk.first_name_female()
+        last_name = fk.last_name()
+        workplace = random.choice(workplace_list) # randomly select a workplace tuple
+        work = workplace[0] # extract workplace_id
+        occupation = workplace[2] # extract occupation_id
+        # query for the equivalent home building, occupation, income_range and home should be inserted before this function is called
+        h_build = con.execute('''
+                          SELECT home_building_id
+                          FROM occupation, income_range JOIN home USING (income_level)
+                          WHERE income >= low AND income < high AND
+                            occupation_id = {0}
+                          '''.format(occupation)).fetchall()[0][0]
+        # loc_building is initialized to equal home_building
+        result.append(template.format(i, first_name, last_name, h_build, h_build, work, sex))
+        
+    # setting an inhabitant with attributes matching the character of the killer (the killer is designated to be the last inhabitant)
+    # this is for the purpose of tests
+    
+    killer_info = con.execute('''
+                            SELECT home_building_id, workplace_id
+                            FROM workplace JOIN occupation USING (occupation_id), income_range JOIN home USING (income_level)
+                            WHERE occupation_name = "student" AND
+                                income >= low AND income < high
+                            ''')
+    h_build = killer_info[0][0]
+    work = killer_info[0][1]
+    result.append(template.format(num_inhab-1, "Light", "Yagami", h_build, h_build, work, "m"))
 
-# def generate_workplaces(num_inhabitants, num_workplaces):
-    # return [random.randint(1, num_workplaces) for _ in range(num_inhabitants)]
-
-# def generate_custody_status(num_inhabitants):
-    # return [random.choice([0, 1]) for _ in range(num_inhabitants)]
-
-# def generate_genders(num_inhabitants):
-    # return [random.choice(['m', 'f']) for _ in range(num_inhabitants)]
-
+def generate_relationship():
+        
+def generate_killer_info():
+    ''' generate only one killer for testing purposes'''
+    global con
+    result = "INSERT INTO killer VALUES(0);\n"
+    template = "INSERT killer_chara VALUES(0, {0}, {1});\n"
+    result = result + template.format("rapist", 10)
+    result = result + template.format("high income", 5)
+    result = result + template.format("")
+        
+        
+            
 
 def generate_workplaces(num_inhabitants: int) -> List[str]:
     """Randomly generate a list of workplaces for each inhabitant."""
