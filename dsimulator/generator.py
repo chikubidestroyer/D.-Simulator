@@ -173,23 +173,6 @@ def init_status(con: sqlite3.Connection):
     con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 1000)")
 
 
-def generate_workplaces(num_inhabitants: int) -> List[str]:
-    """Randomly generate a list of workplaces for each inhabitant."""
-    workplaces = ["Tech Company", "Hospital", "University", "Retail Store", "Factory", "Law Firm", "Restaurant", "Bank", "Hotel", "Museum"]
-    return [random.choice(workplaces) for _ in range(num_inhabitants)]
-
-
-def generate_custody_status(num_inhabitants: int) -> List[str]:
-    """Randomly generate a list of custody status for each inhabitant."""
-    statuses = ["Free", "Under Custody"]
-    return [random.choice(statuses) for _ in range(num_inhabitants)]
-
-
-def generate_genders(num_inhabitants: int) -> List[str]:
-    """Randomly generate a list of genders for each inhabitant."""
-    return [random.choice(['Male', 'Female']) for _ in range(num_inhabitants)]
-
-
 def generate_map() -> str:
     """Return a query that inserts a random-generated map into the database."""
     result = ''
