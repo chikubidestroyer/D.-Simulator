@@ -10,6 +10,7 @@ import sqlite3
 from dsimulator.defs import ROOT_DIR
 import dsimulator.generator as gen
 from typing import List, Tuple
+import math
 
 con = None
 w = None  # weight graph of edges
@@ -39,7 +40,8 @@ def init_game() -> None:
             'INSERT INTO income_range (low, high) VALUES (1000, 2000)')
         income_level = cur.lastrowid
 
-        first_name, last_name = gen.generate_random_names(1)[0]
+        # first_name, last_name = gen.generate_random_names(1)[0]
+        first_name, last_name = 'John', 'Doe'
         cur = con.execute(
             'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
         con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
@@ -271,7 +273,8 @@ def test() -> None:
     print("loc_time:")
     print(cur.fetchall())
 
-def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None, gender = "gender", dead = None, home_building_name = "home_building_name", custody = None, suspect = None):
+
+def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gender="gender", dead=None, home_building_name="home_building_name", custody=None, suspect=None):
     """Returns the query result inputted by the player
     """
     global con
@@ -283,10 +286,10 @@ def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None
             required_predicate = required_predicate + " AND income >= " + str(income_lo) + " AND income <= " + str(income_hi)
         else:
             required_predicate = required_predicate + " AND income >= " + str(income_lo)
-        
+
         if occupation != None:
             required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
-        
+
     if dead == False:
         required_predicate = required_predicate + " AND dead = 0"
     elif dead == True:
@@ -295,15 +298,12 @@ def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None
         required_predicate = required_predicate + " AND custody = 0"
     elif custody == True:
         required_predicate = required_predicate + " AND custody = 0"
-    
+
     if suspect == True:
         required_predicate = required_predicate + " AND EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
     elif suspect == False:
         required_predicate = required_predicate + " AND NOT EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
-        
-    
-        
-    
+
     '''
     print("""
                 SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
@@ -313,8 +313,7 @@ def user_inhabitant_query(income_lo = 0, income_hi = math.inf, occupation = None
     '''
     cur = con.execute("""
                 SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
-                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
-                """
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables +
+                      """
                 WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
     return cur.fetchall()
-    

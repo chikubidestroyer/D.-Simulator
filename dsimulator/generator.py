@@ -15,15 +15,16 @@ DEAD_VALUES = [0, 1]
 
 con = None
 
-def generate_inhabitant(num_inhab = 1000) -> str:
+
+def generate_inhabitant(num_inhab=1000) -> str:
     global con
     result = ""
     template = "INSERT INTO inhabitant VALUES ({0},{1},{2},{3},{4},{5},0,0,{6});\n"
     # workplace data should be inserted before this function is called
     workplace_list = con.execute("SELECT * FROM workplace")
-    fk = Faker('en_US') # use english names as this shall be an American town
-    for i in range(num_inhab-1):
-        gender = random.uniform(0,1)
+    fk = Faker('en_US')  # use english names as this shall be an American town
+    for i in range(num_inhab - 1):
+        gender = random.uniform(0, 1)
         sex = None
         first_name = None
         if gender < 0.5:
@@ -35,9 +36,9 @@ def generate_inhabitant(num_inhab = 1000) -> str:
             sex = "f"
             first_name = fk.first_name_female()
         last_name = fk.last_name()
-        workplace = random.choice(workplace_list) # randomly select a workplace tuple
-        work = workplace[0] # extract workplace_id
-        occupation = workplace[2] # extract occupation_id
+        workplace = random.choice(workplace_list)  # randomly select a workplace tuple
+        work = workplace[0]  # extract workplace_id
+        occupation = workplace[2]  # extract occupation_id
         # query for the equivalent home building, occupation, income_range and home should be inserted before this function is called
         h_build = con.execute('''
                           SELECT home_building_id
@@ -47,10 +48,10 @@ def generate_inhabitant(num_inhab = 1000) -> str:
                           '''.format(occupation)).fetchall()[0][0]
         # loc_building is initialized to equal home_building
         result.append(template.format(i, first_name, last_name, h_build, h_build, work, sex))
-        
+
     # setting an inhabitant with attributes matching the character of the killer (the killer is designated to be the last inhabitant)
     # this is for the purpose of tests
-    
+
     killer_info = con.execute('''
                             SELECT home_building_id, workplace_id
                             FROM workplace JOIN occupation USING (occupation_id), income_range JOIN home USING (income_level)
@@ -59,10 +60,13 @@ def generate_inhabitant(num_inhab = 1000) -> str:
                             ''')
     h_build = killer_info[0][0]
     work = killer_info[0][1]
-    result.append(template.format(num_inhab-1, "Light", "Yagami", h_build, h_build, work, "m"))
+    result.append(template.format(num_inhab - 1, "Light", "Yagami", h_build, h_build, work, "m"))
+
 
 def generate_relationship():
-        
+    pass
+
+
 def generate_test_killer():
     ''' generate only one killer for testing purposes'''
     result = "INSERT INTO killer VALUES(0);\n"
@@ -72,11 +76,11 @@ def generate_test_killer():
     result = result + template.format("colleague", 10)
     return result
 
+
 def init_status():
     '''initialized to constant for tests'''
     return "INSERT INTO status VALUES(0, 1, 15, 0, 1000);\n"
-        
-            
+
 
 def generate_workplaces(num_inhabitants: int) -> List[str]:
     """Randomly generate a list of workplaces for each inhabitant."""
