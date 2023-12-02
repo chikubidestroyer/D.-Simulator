@@ -13,7 +13,6 @@ NUM_INHABITANTS = 1000
 GENDERS = ['m', 'f']
 CUSTODY_VALUES = [0, 1]
 DEAD_VALUES = [0, 1]
-
 fk = Faker('en_US')  # use english names as this shall be an American town
 
 
@@ -74,62 +73,77 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
                         (building_id, occupation_per_building))
 
 
-def generate_inhabitant(con: sqlite3.Connection, num_inhab: int = 1000) -> str:
-    """
-    Return a query that inserts random-generated inhabitants into the database.
+# Function to generate inhabitants and relationships
+def generate_inhabitants_and_relationships(num_inhab=1000):
+    template_inhabitant = "INSERT INTO inhabitant VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?);"
+    template_relationship = "INSERT INTO relationship VALUES (?, ?, ?);"
 
-    Requires workplace data to be generated before calling this function.
-    """
-    result = ""
-    template = "INSERT INTO inhabitant VALUES ({0},{1},{2},{3},{4},{5},0,0,{6});\n"
-    cur = con.execute("SELECT * FROM workplace")
-    workplace_list = cur.fetchall()
+    # Get workplace data
+    workplace_list = con.execute("SELECT * FROM workplace").fetchall()
+
+    # Generate inhabitants
+    inhabitants = []
     for i in range(num_inhab - 1):
-        gender = random.uniform(0, 1)
-        sex = None
-        first_name = None
-        if gender < 0.5:
-            # generate male inhabitant
-            sex = "m"
-            first_name = fk.first_name_male()
-        else:
-            # generate female inhabitant
-            sex = "f"
-            first_name = fk.first_name_female()
+        gender = 'm' if random.uniform(0, 1) < 0.5 else 'f'
+        first_name = fk.first_name_male() if gender == 'm' else fk.first_name_female()
         last_name = fk.last_name()
-        workplace = random.choice(workplace_list)  # randomly select a workplace tuple
-        work = workplace[0]  # extract workplace_id
-        occupation = workplace[2]  # extract occupation_id
-        # query for the equivalent home building, occupation, income_range and home should be inserted before this function is called
+
+        # Randomly select a workplace tuple
+        workplace = random.choice(workplace_list)
+        work = workplace['workplace_id']
+        occupation = workplace['occupation_id']
+
+        # Query for the equivalent home building, occupation, and income_range
         h_build = con.execute('''
-                          SELECT home_building_id
-                          FROM occupation, income_range JOIN home USING (income_level)
-                          WHERE income >= low AND income < high AND
-                            occupation_id = {0}
-                          '''.format(occupation)).fetchall()[0][0]
-        # loc_building is initialized to equal home_building
-        result.append(template.format(i, first_name, last_name, h_build, h_build, work, sex))
+            SELECT home_building_id
+            FROM occupation, income_range JOIN home USING (income_level)
+            WHERE income >= low AND income < high AND
+                occupation_id = ?
+        ''', (occupation,)).fetchone()['home_building_id']
 
-    # setting an inhabitant with attributes matching the character of the killer (the killer is designated to be the last inhabitant)
-    # this is for the purpose of tests
+        # Insert inhabitant into the database
+        execute_query(template_inhabitant, (i, first_name, last_name, h_build, h_build, work, gender))
 
+        # Save inhabitant details for later relationship generation
+        inhabitants.append({
+            'id': i,
+            'gender': gender,
+            'last_name': last_name,
+            'occupation': occupation
+        })
+
+    # Set an inhabitant with attributes matching the character of the killer
     killer_info = con.execute('''
-                            SELECT home_building_id, workplace_id
-                            FROM workplace JOIN occupation USING (occupation_id), income_range JOIN home USING (income_level)
-                            WHERE occupation_name = "student" AND
-                                income >= low AND income < high
-                            ''')
-    h_build = killer_info[0][0]
-    work = killer_info[0][1]
-    result.append(template.format(num_inhab - 1, "Light", "Yagami", h_build, h_build, work, "m"))
+        SELECT home_building_id, workplace_id
+        FROM workplace JOIN occupation USING (occupation_id), income_range JOIN home USING (income_level)
+        WHERE occupation_name = "Student" AND
+            income >= low AND income < high
+    ''').fetchone()
 
-    return result
+    # Insert killer inhabitant
+    execute_query(template_inhabitant, (num_inhab - 1, "Light", "Yagami", killer_info['home_building_id'],
+                                         killer_info['home_building_id'], killer_info['workplace_id'], 'm'))
 
+    # Generate relationships between inhabitants
+    for inhabitant in inhabitants:
+        # Consistent relationships based on common sense
+        related_inhabitants = [other for other in inhabitants if other['id'] != inhabitant['id']]
+        for _ in range(4):
+            # Get random relationship type
+            relationship_type = random.choice(["Parent", "Spouse", "Children", "Friend", "Enemy", "Colleague", "Acquaintance"])
 
-def generate_relationship():
-    pass
+            # Get a related inhabitant based on gender, occupation, and last name
+            related = random.choice([
+                other for other in related_inhabitants
+                if other['gender'] != inhabitant['gender'] and
+                other['last_name'] == inhabitant['last_name']
+            ])
 
+            # Insert consistent relationship into the database
+            execute_query(template_relationship, (inhabitant['id'], related['id'], relationship_type))
 
+    
+        
 def generate_test_killer():
     ''' generate only one killer for testing purposes'''
     result = "INSERT INTO killer VALUES(0);\n"
@@ -142,6 +156,7 @@ def generate_test_killer():
 
 def init_status():
     '''initialized to constant for tests'''
+    # resignation day is set to 15 for now
     return "INSERT INTO status VALUES(0, 1, 15, 0, 1000);\n"
 
 
