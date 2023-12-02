@@ -369,3 +369,28 @@ def query_via_point_constraint(start: int, end: int, mins: int):
                           WHERE a.src = ? AND b.dst = ? AND a.d + b.d <= ?''',
                       (start, end, mins))
     return cur.fetchall()
+
+
+# TODO: Test this with inhabitant data.
+
+
+def query_witness_count(vertex_id: int):
+    """
+    List the name and the number of times that each inhabitant has been seen in a vertex.
+
+    query_loc_time() must be run before calling this function.
+    """
+    cur = con.execute('''SELECT first_name, last_name, COUNT(*) AS c
+                           FROM loc_time AS a
+                                JOIN inhabitant
+                                USING(inhabitant_id)
+                                JOIN loc_time AS b
+                                ON a.inhabitant_id <> b.inhabitant_id
+                                   AND a.vertex_id = b.vertex_id
+                                   AND ((a.arrive <= b.arrive AND b.arrive <= a.leave)
+                                        OR (a.arrive <= b.leave AND b.leave <= a.leave))
+                          WHERE a.vertex_id = ?
+                       GROUP BY a.inhabitant_id
+                       ORDER BY c DESC''',
+                      vertex_id)
+    return cur
