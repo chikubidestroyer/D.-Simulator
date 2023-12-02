@@ -17,13 +17,40 @@ DEAD_VALUES = [0, 1]
 fk = Faker('en_US')  # use english names as this shall be an American town
 
 
+def get_free_vertex(con: sqlite3.Connection) -> int:
+    """Return a random vertex without a building."""
+    cur = con.execute('''SELECT vertex_id
+                           FROM vertex
+                          WHERE NOT EXISTS (SELECT * FROM building WHERE building_id = vertex_id)
+                       ORDER BY RANDOM()
+                          LIMIT 1''')
+    return cur.fetchone()[0]
+
+
+def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
+    """Generate the homes and income ranges given the database connection containing vertices."""
+    income_name = ['Poor', 'Medium', 'Rich']
+    income = [(1, 5000), (5001, 20000), (20001, None)]
+    with con:
+        for n, r in zip(income_name, income):
+            cur = con.execute('INSERT INTO income_range (low, high) VALUES (?, ?)', r)
+            income_level = cur.lastrowid
+
+            for _ in range(building_per_range):
+                home_building_id = get_free_vertex(con)
+                con.execute('INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)',
+                            (home_building_id, n, 0))
+                con.execute('INSERT INTO home (home_building_id, income_level) VALUES (?, ?)',
+                            (home_building_id, income_level))
+
+
 def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_building: int = 30, occupation_per_building: int = 3) -> None:
-    """Generate the workplaces given the database connection containing vertices."""
+    """Generate the workplaces (occupations and buildings) given the database connection containing vertices."""
     with con:
         # Generate the occupations.
         for _ in range(num_occupation):
             occupation_name = fk.job()
-            income = random.randint(1, 200) * 1000
+            income = random.randint(1, 100) * 1000
             arrive_min = random.randint(8, 10) * 60
             leave_min = random.randint(16, 18) * 60
             con.execute('INSERT INTO occupation (occupation_name, income, arrive_min, leave_min) VALUES (?, ?, ?, ?)',
@@ -31,13 +58,7 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
 
         # Generate the working buildings.
         for _ in range(num_building):
-            # Choose a vertex with no building.
-            cur = con.execute('''SELECT vertex_id
-                                   FROM vertex
-                                  WHERE NOT EXISTS (SELECT * FROM building WHERE building_id = vertex_id)
-                               ORDER BY RANDOM()
-                                  LIMIT 1''')
-            building_id = cur.fetchone()[0]
+            building_id = get_free_vertex(con)
 
             # Use a company name as the name of the building.
             building_name = fk.company()

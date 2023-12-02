@@ -48,6 +48,7 @@ def init_game() -> None:
                                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
                     (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
 
+        gen.generate_home(con)
         gen.generate_workplace(con)
         # con.execute(gen.generate_inhabitant(con))
 
@@ -278,6 +279,10 @@ def _run_script(file_name: str) -> None:
 def test() -> None:
     """General testing function."""
 
+    cur = con.execute('SELECT * FROM income_range')
+    print('income_range:')
+    print(cur.fetchall())
+
     cur = con.execute('SELECT * FROM occupation')
     print('occupation:')
     print(cur.fetchall())
@@ -289,6 +294,7 @@ def test() -> None:
     cur = con.execute('SELECT * FROM workplace')
     print('workplace:')
     print(cur.fetchall())
+
     return
 
     _query_loc_time_inhabitant()
