@@ -108,8 +108,10 @@ def generate_inhabitants_and_relationships(num_inhab=1000):
         inhabitants.append({
             'id': i,
             'gender': gender,
+            'first_name': first_name,
             'last_name': last_name,
-            'occupation': occupation
+            'home_building': h_build
+            'workplace_id': work
         })
 
     # Set an inhabitant with attributes matching the character of the killer
@@ -127,20 +129,31 @@ def generate_inhabitants_and_relationships(num_inhab=1000):
     # Generate relationships between inhabitants
     for inhabitant in inhabitants:
         # Consistent relationships based on common sense
-        related_inhabitants = [other for other in inhabitants if other['id'] != inhabitant['id']]
-        for _ in range(4):
-            # Get random relationship type
-            relationship_type = random.choice(["Parent", "Spouse", "Children", "Friend", "Enemy", "Colleague", "Acquaintance"])
+        different_inhabitants = [other for other in inhabitants if other['id'] != inhabitant['id']]
+        # Get random relationship type
+        relationship_type = random.choice(["Relative", "Friend", "Enemy", "Colleague"])
 
-            # Get a related inhabitant based on gender, occupation, and last name
-            related = random.choice([
-                other for other in related_inhabitants
-                if other['gender'] != inhabitant['gender'] and
-                other['last_name'] == inhabitant['last_name']
-            ])
+        # Get a related inhabitant based on gender and last name
+        related = [
+            other for other in different_inhabitants if
+            other['last_name'] == inhabitant['last_name']
+        ]
+        for relative in related:
+            execute_query(template_relationship, (inhabitant['id'], relative['id'], "Relative"))
 
-            # Insert consistent relationship into the database
-            execute_query(template_relationship, (inhabitant['id'], related['id'], relationship_type))
+        enemy = random.choice(inhabitants)
+        execute_query(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
+        
+        friend = random.choice(inhabitants)
+        execute_query(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
+        
+        colleagues = [
+            other for other in different_inhabitants if
+            other['workplace_id'] == inhabitant['workplace_id']
+        ]
+        for colleague in colleagues:
+            execute_query(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
+
 
     
         
