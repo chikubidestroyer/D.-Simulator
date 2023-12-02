@@ -24,7 +24,7 @@ def init_game() -> None:
     global con
     con = sqlite3.connect(":memory:")
 
-    _run_script('DDL.sql')
+    run_script('DDL.sql')
 
     # Currently just inserting some testing data.
     # TODO: Implement procedural generation for the game world.
@@ -222,29 +222,29 @@ def modify_suspect(inhabitant_id: int) -> None:
             WHERE inhabitant_id = {0}'''.format(inhabitant_id))
 
 
-def _query_shortest_path() -> None:
+def query_shortest_path() -> None:
     """Get the shortest path between all vertex pairs in a temp table `dist`."""
     with con:
-        _run_script('shortest_path.sql')
+        run_script('shortest_path.sql')
 
 
-def _init_loc_time() -> None:
+def init_loc_time() -> None:
     """Initialize the `src_dst` and `loc_time` table."""
     with con:
-        _run_script('init_loc_time.sql')
+        run_script('init_loc_time.sql')
 
 
-def _query_loc_time() -> None:
+def query_loc_time() -> None:
     """Insert the location-time tuples into `loc_time`, specifying paths that satisfy the constraints given in `src_dst`."""
     with con:
-        _run_script('query_loc_time.sql')
+        run_script('query_loc_time.sql')
 
 
-def _query_loc_time_inhabitant() -> None:
+def query_loc_time_inhabitant() -> None:
     """Insert the location-time tuples of all inhabitants into `loc_time`."""
-    _query_shortest_path()
+    query_shortest_path()
 
-    _init_loc_time()
+    init_loc_time()
 
     # Currently, the inhabitant may leave home after 7:00 (420 mins)
     # and must return home before 19:00 (1140 mins).
@@ -266,10 +266,10 @@ def _query_loc_time_inhabitant() -> None:
                            SELECT inhabitant_id, workplace_building_id, home_building_id, leave_min, 1140
                              FROM t''')
 
-    _query_loc_time()
+    query_loc_time()
 
 
-def _run_script(file_name: str) -> None:
+def run_script(file_name: str) -> None:
     with open(os.path.join(ROOT_DIR, file_name)) as fd:
         script = fd.read()
     with con:
@@ -297,7 +297,7 @@ def test() -> None:
 
     return
 
-    _query_loc_time_inhabitant()
+    query_loc_time_inhabitant()
     cur = con.execute('SELECT * FROM dist LIMIT 10')
     print('dist:')
     print(cur.fetchall())
@@ -339,7 +339,7 @@ def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gend
     '''
     print("""
                 SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
-                FROM inhabitant NATURAL JOIN building AS home """ + required_tables + 
+                FROM inhabitant NATURAL JOIN building AS home """ + required_tables +
                 """
                 WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
     '''
