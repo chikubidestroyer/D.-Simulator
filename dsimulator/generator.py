@@ -74,7 +74,7 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
 
 
 # Function to generate inhabitants and relationships
-def generate_inhabitants_and_relationships(num_inhab=1000):
+def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=1000):
     template_inhabitant = "INSERT INTO inhabitant VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?);"
     template_relationship = "INSERT INTO relationship VALUES (?, ?, ?);"
 
@@ -157,20 +157,20 @@ def generate_inhabitants_and_relationships(num_inhab=1000):
 
     
         
-def generate_test_killer():
+def generate_test_killer(con: sqlite3.Connection):
     ''' generate only one killer for testing purposes'''
-    result = "INSERT INTO killer VALUES(0);\n"
-    template = "INSERT killer_chara VALUES(0, {0}, {1});\n"
-    result = result + template.format("rapist", 15)
-    result = result + template.format("high income", 5)
-    result = result + template.format("colleague", 10)
-    return result
+    
+    con.execute("INSERT INTO killer VALUES(0)")
+    template = "INSERT killer_chara VALUES(0, {0}, {1})"
+    con.execute(template.format("rapist", 15))
+    con.execute(template.format("high income", 5))
+    con.execute(template.format("colleague", 10))
 
 
-def init_status():
+def init_status(con: sqlite3.Connection):
     '''initialized to constant for tests'''
     # resignation day is set to 15 for now
-    return "INSERT INTO status VALUES(0, 1, 15, 0, 1000);\n"
+    con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 1000)")
 
 
 def generate_workplaces(num_inhabitants: int) -> List[str]:
