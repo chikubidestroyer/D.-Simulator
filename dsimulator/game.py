@@ -295,6 +295,10 @@ def test() -> None:
     print('workplace:')
     print(cur.fetchall())
 
+    query_shortest_path()
+    print('1 -> 4 less than 100 mins:')
+    print(query_via_point_constraint(1, 4, 100))
+
     return
 
     query_loc_time_inhabitant()
@@ -348,4 +352,20 @@ def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gend
                 FROM inhabitant NATURAL JOIN building AS home """ + required_tables +
                       """
                 WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
+    return cur.fetchall()
+
+
+def query_via_point_constraint(start: int, end: int, mins: int):
+    """
+    List all the vertices v where the path start -> v -> end is not longer than mins.
+
+    query_shortest_path() must be run before calling this function.
+    """
+
+    cur = con.execute('''SELECT a.dst
+                           FROM dist AS a
+                                JOIN dist AS b
+                                ON a.dst = b.src
+                          WHERE a.src = ? AND b.dst = ? AND a.d + b.d <= ?''',
+                      (start, end, mins))
     return cur.fetchall()
