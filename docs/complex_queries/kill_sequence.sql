@@ -27,15 +27,7 @@ WHERE A.inhabitant_id = status.killer_inhabitant_id AND
 
 
 INSERT INTO weighed_pot_victim
-WITH pot_victim AS (
-	SELECT DISTINCT B.inhabitant_id, B.vertex_id
-  	FROM status, loc_time AS A, loc_time AS B
-  	WHERE A.inhabitant_id = status.killer_inhabitant_id AND
-  			A.vertex_id = B.vertex_id AND
-  			A.arrive <= B.leave AND
-  			A.leave >= B.arrive
-),
-killer_info AS (
+WITH killer_info AS (
 	SELECT inhabitant.* FROM status, inhabitant
   	WHERE status.killer_inhabitant_id = inhabitant.inhabitant_id
 )
@@ -54,11 +46,14 @@ WHERE status.killer_id = k.killer_id AND
           	SELECT * FROM killer_info
           	WHERE killer_info.gender <> i.gender
         )
+		WHEN k.description = "colleague" THEN EXISTS(
+			SELECT * FROM killer_info WHERE killer_info.workplace_id = i.workplace_id
+		)
         ELSE EXISTS(
         	SELECT * FROM relationship
           	WHERE subject_id = killer_inhabitant_id AND
           		object_id = inhabitant_id AND
-          		relationship.description = "mother"
+          		relationship.description = "Relative"
         );
 
 SELECT inhabitant_id, vertex_id AS scene_vertex_id, (ABS(RANDOM())%(end_min-start_min) + start_min) AS min_of_death
