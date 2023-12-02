@@ -1,8 +1,9 @@
 """Generate the game world procedurally."""
 
+import sqlite3
 import numpy as np
 import random
-from typing import List, Tuple
+from typing import List
 from faker import Faker
 
 np.random.seed(0)
@@ -13,16 +14,55 @@ GENDERS = ['m', 'f']
 CUSTODY_VALUES = [0, 1]
 DEAD_VALUES = [0, 1]
 
-con = None
+fk = Faker('en_US')  # use english names as this shall be an American town
 
 
-def generate_inhabitant(num_inhab=1000) -> str:
-    global con
+def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_building: int = 30, occupation_per_building: int = 3) -> None:
+    """Generate the workplaces given the database connection containing vertices."""
+    with con:
+        # Generate the occupations.
+        for _ in range(num_occupation):
+            occupation_name = fk.job()
+            income = random.randint(1, 200) * 1000
+            arrive_min = random.randint(8, 10) * 60
+            leave_min = random.randint(16, 18) * 60
+            con.execute('INSERT INTO occupation (occupation_name, income, arrive_min, leave_min) VALUES (?, ?, ?, ?)',
+                        (occupation_name, income, arrive_min, leave_min))
+
+        # Generate the working buildings.
+        for _ in range(num_building):
+            # Choose a vertex with no building.
+            cur = con.execute('''SELECT vertex_id
+                                   FROM vertex
+                                  WHERE NOT EXISTS (SELECT * FROM building WHERE building_id = vertex_id)
+                               ORDER BY RANDOM()
+                                  LIMIT 1''')
+            building_id = cur.fetchone()[0]
+
+            # Use a company name as the name of the building.
+            building_name = fk.company()
+            con.execute('INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)',
+                        (building_id, building_name, 0))
+
+            # Connect buildings with occupations.
+            con.execute('''INSERT INTO workplace (workplace_building_id, occupation_id)
+                               SELECT ?, occupation_id
+                                 FROM occupation
+                             ORDER BY RANDOM()
+                                LIMIT ?''',
+                        (building_id, occupation_per_building))
+
+
+def generate_inhabitant(con: sqlite3.Connection, num_inhab: int = 1000) -> str:
+    """
+    Return a query that inserts random-generated inhabitants into the database.
+
+    Requires workplace data to be generated before calling this function.
+    """
     result = ""
     template = "INSERT INTO inhabitant VALUES ({0},{1},{2},{3},{4},{5},0,0,{6});\n"
-    # workplace data should be inserted before this function is called
-    workplace_list = con.execute("SELECT * FROM workplace")
-    fk = Faker('en_US')  # use english names as this shall be an American town
+    cur = con.execute("SELECT * FROM workplace")
+    workplace_list = cur.fetchall()
     for i in range(num_inhab - 1):
         gender = random.uniform(0, 1)
         sex = None
@@ -61,6 +101,8 @@ def generate_inhabitant(num_inhab=1000) -> str:
     h_build = killer_info[0][0]
     work = killer_info[0][1]
     result.append(template.format(num_inhab - 1, "Light", "Yagami", h_build, h_build, work, "m"))
+
+    return result
 
 
 def generate_relationship():

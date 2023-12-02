@@ -48,6 +48,9 @@ def init_game() -> None:
                                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
                     (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
 
+        gen.generate_workplace(con)
+        # con.execute(gen.generate_inhabitant(con))
+
 
 def close_game() -> None:
     """Close the connection to game state database."""
@@ -164,6 +167,15 @@ def list_edge() -> List[Tuple[int, int, int, int, int]]:
     return cur.fetchall()
 
 
+def list_building() -> List[Tuple[int, int]]:
+    """Return a list of coordinates for all buildings."""
+    cur = con.execute('''SELECT x, y
+                           FROM building
+                           JOIN vertex
+                                ON building_id=vertex_id''')
+    return cur.fetchall()
+
+
 def lockdown(building_id: int) -> None:
     """Set given building to lockdown."""
     con.execute('''
@@ -264,13 +276,27 @@ def _run_script(file_name: str) -> None:
 
 
 def test() -> None:
-    """Test _query_loc_time_inhabitant()."""
+    """General testing function."""
+
+    cur = con.execute('SELECT * FROM occupation')
+    print('occupation:')
+    print(cur.fetchall())
+
+    cur = con.execute('SELECT * FROM building')
+    print('building:')
+    print(cur.fetchall())
+
+    cur = con.execute('SELECT * FROM workplace')
+    print('workplace:')
+    print(cur.fetchall())
+    return
+
     _query_loc_time_inhabitant()
     cur = con.execute('SELECT * FROM dist LIMIT 10')
-    print("dist:")
+    print('dist:')
     print(cur.fetchall())
     cur = con.execute('SELECT * FROM loc_time LIMIT 10')
-    print("loc_time:")
+    print('loc_time:')
     print(cur.fetchall())
 
 

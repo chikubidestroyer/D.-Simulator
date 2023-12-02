@@ -3,7 +3,7 @@
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 import dsimulator.ui.save as save
-from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge, test
+from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge, list_building, test
 from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import math
 
@@ -24,6 +24,12 @@ def to_main() -> None:
     dpg.set_primary_window(main.main_window, True)
 
 
+def test_update() -> None:
+    """Run test and update game window."""
+    test()
+    update_game_window()
+
+
 with dpg.window() as game_window:
     with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
         with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True):
@@ -37,7 +43,7 @@ with dpg.window() as game_window:
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save Game', callback=to_save)
         dpg.add_button(label='Quit to Main Menu', callback=to_main)
-        dpg.add_button(label='test', callback=test)
+        dpg.add_button(label='TEST', callback=test_update)
     dpg.hide_item(game_window)
 
 
@@ -48,6 +54,10 @@ def update_game_window() -> None:
     offset = 1
     for x, y in list_vertex():
         dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 10, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
+    for x, y in list_building():
+        xd = (x + offset) * scale
+        yd = (y + offset) * scale
+        dpg.draw_rectangle((xd - 20, yd - 20), (xd + 20, yd + 20), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
 
     font_size = 20
     shift = 12
