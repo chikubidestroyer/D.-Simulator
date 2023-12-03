@@ -6,6 +6,7 @@ import dsimulator.ui.save as save
 from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge, list_building, test
 from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import math
+from typing import List, Tuple, Callable
 
 
 def to_save() -> None:
@@ -28,6 +29,16 @@ def test_update() -> None:
     """Run test and update game window."""
     test()
     update_game_window()
+
+
+def make_building_clicked(buildings: List[Tuple[int, int, int]], b_size: int) -> Callable[[], None]:
+    """Create a callback function that is called when any building is clicked."""
+    def building_clicked() -> None:
+        pos = dpg.get_drawing_mouse_pos()
+        for b in buildings:
+            if b[0] - b_size <= pos[0] <= b[0] + b_size and b[1] - b_size <= pos[1] <= b[1] + b_size:
+                print('Clicked building: {}'.format(b[2]))
+    return building_clicked
 
 
 with dpg.window() as game_window:
@@ -54,10 +65,18 @@ def update_game_window() -> None:
     offset = 1
     for x, y in list_vertex():
         dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 10, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
-    for x, y in list_building():
+
+    buildings = []
+    b_size = 20
+    for x, y, id in list_building():
         xd = (x + offset) * scale
         yd = (y + offset) * scale
-        dpg.draw_rectangle((xd - 20, yd - 20), (xd + 20, yd + 20), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
+        dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
+        buildings.append((xd, yd, id))
+
+    with dpg.item_handler_registry() as handler:
+        dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
+    dpg.bind_item_handler_registry(game_map, handler)
 
     font_size = 20
     shift = 12

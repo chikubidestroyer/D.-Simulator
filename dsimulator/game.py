@@ -61,7 +61,7 @@ def init_game() -> None:
         query_loc_time_inhabitant()
         print(select_victim())
         print('kill_sequence test complete')
-        
+
         '''
         while day != resig_day:
 
@@ -187,9 +187,9 @@ def list_edge() -> List[Tuple[int, int, int, int, int]]:
     return cur.fetchall()
 
 
-def list_building() -> List[Tuple[int, int]]:
-    """Return a list of coordinates for all buildings."""
-    cur = con.execute('''SELECT x, y
+def list_building() -> List[Tuple[int, int, int]]:
+    """Return a list of coordinates and `building_id` and for all buildings."""
+    cur = con.execute('''SELECT x, y, building_id
                            FROM building
                            JOIN vertex
                                 ON building_id=vertex_id''')
@@ -427,6 +427,7 @@ def query_victim_commonality():
     cur = con.execute("SELECT * FROM commonality")
     return cur.fetchall()
 
+
 def select_victim():
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
@@ -441,5 +442,6 @@ def select_victim():
         ORDER BY weight_sum DESC;
     ''')
     return cur.fetchone()
+
 
 init_game()
