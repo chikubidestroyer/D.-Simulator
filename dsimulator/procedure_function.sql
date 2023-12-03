@@ -56,7 +56,7 @@ BEGIN
 					),';',-1
 				) INTO outer_id;
                 
-                # keep track of the change of time_cost
+                -- keep track of the change of time_cost
                 SELECT cost_minute INTO time_cost
                 FROM edge
                 WHERE `end` = outer_id;
