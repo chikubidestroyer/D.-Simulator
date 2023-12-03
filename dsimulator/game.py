@@ -55,14 +55,15 @@ def init_game() -> None:
         gen.generate_inhabitants_and_relationships(con)
         gen.generate_test_killer(con)
         gen.init_status(con)
-        print('checkpoint')
-
+        print('data population complete')
+        '''
         while day != resig_day:
 
             query_loc_time_inhabitant()
 
             day += 1
             con.execute('UPDATE status SET day = ?', day)
+        '''
 
 
 def close_game() -> None:
