@@ -58,6 +58,11 @@ def init_game() -> None:
         print('data population complete')
         init_commonality_view()
         print('commonality view test complete')
+        query_loc_time_inhabitant()
+        print(select_victim())
+        print(con.execute("select * from pot_victim").fetchall())
+        print('kill_sequence test complete')
+        
         '''
         while day != resig_day:
 
@@ -423,5 +428,10 @@ def query_victim_commonality():
     cur = con.execute("SELECT * FROM commonality")
     return cur.fetchall()
 
+def select_victim():
+    with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
+        script = fd.read()
+    cur = con.executescript(script)
+    return cur.fetchall()
 
 init_game()
