@@ -418,3 +418,8 @@ def query_victim_commonality():
     '''
     cur = con.execute("SELECT * FROM commonality")
     return cur.fetchall()
+
+
+print('hi')
+init_game()
+print('hi')

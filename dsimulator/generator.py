@@ -94,6 +94,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
         occupation = workplace[2]  # occupation_id
 
         # Query for the equivalent home building, occupation, and income_range
+        print(i)
         h_build = con.execute('''
             SELECT home_building_id
             FROM occupation, income_range JOIN home USING (income_level)
@@ -140,15 +141,18 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             other for other in different_inhabitants if
             other['last_name'] == inhabitant['last_name']
         ]
+        different_inhabitants = different_inhabitants ^ related
         with con:
             for relative in related:
                 con.execute(template_relationship, (inhabitant['id'], relative['id'], "Relative"))
 
-        enemy = random.choice(inhabitants)
+        enemy = random.choice(different_inhabitants)
+        different_inhabitants = different_inhabitants ^ enemy
         with con:
             con.execute(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
 
-        friend = random.choice(inhabitants)
+        friend = random.choice(different_inhabitants)
+        different_inhabitants = different_inhabitants ^ friend
         with con:
             con.execute(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
 
@@ -156,6 +160,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             other for other in different_inhabitants if
             other['workplace_id'] == inhabitant['workplace_id']
         ]
+        
         for colleague in colleagues:
             with con:
                 con.execute(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
