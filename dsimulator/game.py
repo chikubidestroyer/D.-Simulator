@@ -52,6 +52,8 @@ def init_game() -> None:
         gen.generate_home(con)
         gen.generate_workplace(con)
         gen.generate_inhabitants_and_relationships(con)
+        gen.generate_test_killer(con)
+        gen.init_status(con)
         
         
 
