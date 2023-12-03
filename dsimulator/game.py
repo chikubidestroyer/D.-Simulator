@@ -55,6 +55,7 @@ def init_game() -> None:
         gen.generate_inhabitants_and_relationships(con)
         gen.generate_test_killer(con)
         gen.init_status(con)
+        print('checkpoint')
 
         while day != resig_day:
 
@@ -420,6 +421,4 @@ def query_victim_commonality():
     return cur.fetchall()
 
 
-print('hi')
 init_game()
-print('hi')

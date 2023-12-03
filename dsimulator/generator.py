@@ -28,8 +28,8 @@ def get_free_vertex(con: sqlite3.Connection) -> int:
 
 def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
     """Generate the homes and income ranges given the database connection containing vertices."""
-    income_name = ['Poor', 'Medium', 'Rich']
-    income = [(1, 5000), (5001, 20000), (20001, None)]
+    income_name = ['low income', 'medium income', 'high income']
+    income = [(1, 5000), (5000, 20000), (20000, None)] # [1,5000), [5000,20000), [20000,inf) this was the bug from previous meeting
     with con:
         for n, r in zip(income_name, income):
             cur = con.execute('INSERT INTO income_range (low, high) VALUES (?, ?)', r)
@@ -77,7 +77,6 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
 def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=1000):
     template_inhabitant = "INSERT INTO inhabitant VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?);"
     template_relationship = "INSERT INTO relationship VALUES (?, ?, ?);"
-
     # Get workplace data
     workplace_list = con.execute("SELECT * FROM workplace").fetchall()
 
@@ -94,12 +93,12 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
         occupation = workplace[2]  # occupation_id
 
         # Query for the equivalent home building, occupation, and income_range
-        print(i)
         h_build = con.execute('''
             SELECT home_building_id
             FROM occupation, income_range JOIN home USING (income_level)
             WHERE income >= low AND (income < high OR high IS NULL) AND
                 occupation_id = ?
+            ORDER BY random()
         ''', (occupation,)).fetchone()[0]
 
         # Insert inhabitant into the database
@@ -141,18 +140,18 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             other for other in different_inhabitants if
             other['last_name'] == inhabitant['last_name']
         ]
-        different_inhabitants = different_inhabitants ^ related
         with con:
             for relative in related:
                 con.execute(template_relationship, (inhabitant['id'], relative['id'], "Relative"))
+                different_inhabitants.remove(relative)
 
         enemy = random.choice(different_inhabitants)
-        different_inhabitants = different_inhabitants ^ enemy
+        different_inhabitants.remove(enemy)
         with con:
             con.execute(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
 
         friend = random.choice(different_inhabitants)
-        different_inhabitants = different_inhabitants ^ friend
+        different_inhabitants.remove(friend)
         with con:
             con.execute(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
 
@@ -170,10 +169,10 @@ def generate_test_killer(con: sqlite3.Connection):
     ''' generate only one killer for testing purposes'''
 
     con.execute("INSERT INTO killer VALUES(0)")
-    template = "INSERT killer_chara VALUES(0, {0}, {1})"
-    con.execute(template.format("rapist", 15))
-    con.execute(template.format("high income", 5))
-    con.execute(template.format("colleague", 10))
+    template = "INSERT INTO killer_chara VALUES(0, ?, ?)"
+    con.execute(template,("rapist", 15))
+    con.execute(template,("high income", 5))
+    con.execute(template,("colleague", 10))
 
 
 def init_status(con: sqlite3.Connection):
