@@ -406,7 +406,8 @@ def select_victim():
             FROM weighed_pot_victim
             GROUP BY inhabitant_id, vertex_id) AS sub, pot_victim
         WHERE sub.inhabitant_id = pot_victim.inhabitant_id AND
-                sub.vertex_id = pot_victim.vertex_id
+                sub.vertex_id = pot_victim.vertex_id AND
+                ABS(RANDOM())%(end_min-start_min) + start_min IS NOT NULL
         ORDER BY weight_sum DESC;
     ''')
     return cur.fetchone()
