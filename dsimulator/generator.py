@@ -178,7 +178,7 @@ def generate_test_killer(con: sqlite3.Connection):
 def init_status(con: sqlite3.Connection):
     '''initialized to constant for tests'''
     # resignation day is set to 15 for now
-    con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 1000)")
+    con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 999)")
 
 
 def generate_map(con: sqlite3.Connection) -> None:

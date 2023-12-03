@@ -60,7 +60,6 @@ def init_game() -> None:
         print('commonality view test complete')
         query_loc_time_inhabitant()
         print(select_victim())
-        print(con.execute("select * from pot_victim").fetchall())
         print('kill_sequence test complete')
         
         '''
@@ -431,7 +430,16 @@ def query_victim_commonality():
 def select_victim():
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
-    cur = con.executescript(script)
-    return cur.fetchall()
+    con.executescript(script)
+    cur = con.execute('''
+        SELECT pot_victim.inhabitant_id, pot_victim.vertex_id AS scene_vertex_id, (ABS(RANDOM())%(end_min-start_min) + start_min) AS min_of_death, weight_sum
+        FROM (SELECT inhabitant_id, vertex_id, sum(chara_weight) AS weight_sum
+            FROM weighed_pot_victim
+            GROUP BY inhabitant_id, vertex_id) AS sub, pot_victim
+        WHERE sub.inhabitant_id = pot_victim.inhabitant_id AND
+                sub.vertex_id = pot_victim.vertex_id
+        ORDER BY weight_sum DESC;
+    ''')
+    return cur.fetchone()
 
 init_game()
