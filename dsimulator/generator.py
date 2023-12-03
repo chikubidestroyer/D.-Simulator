@@ -29,7 +29,7 @@ def get_free_vertex(con: sqlite3.Connection) -> int:
 def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
     """Generate the homes and income ranges given the database connection containing vertices."""
     income_name = ['low income', 'medium income', 'high income']
-    income = [(1, 5000), (5000, 20000), (20000, None)] # [1,5000), [5000,20000), [20000,inf) this was the bug from previous meeting
+    income = [(1, 30000), (30000, 90000), (90000, None)] # [1,3000), [3000,90000), [90000,inf) this was the bug from previous meeting
     with con:
         for n, r in zip(income_name, income):
             cur = con.execute('INSERT INTO income_range (low, high) VALUES (?, ?)', r)

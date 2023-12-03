@@ -56,6 +56,8 @@ def init_game() -> None:
         gen.generate_test_killer(con)
         gen.init_status(con)
         print('data population complete')
+        init_commonality_view()
+        print('commonality view test complete')
         '''
         while day != resig_day:
 

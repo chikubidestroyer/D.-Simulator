@@ -1,4 +1,4 @@
-CREATE VIEW AS
+CREATE VIEW commonality AS
 WITH victim_info AS(
     SELECT * FROM
     inhabitant LEFT OUTER JOIN home USING(home_building_id), victim
@@ -6,7 +6,7 @@ WITH victim_info AS(
 )
 SELECT attribute_name, attribute_value, COUNT(*) AS attribute_cnt
 FROM (
-    SELECT 'name' AS attribute_name, name AS attribute_value FROM victim_info
+    SELECT 'name' AS attribute_name, first_name AS attribute_value FROM victim_info
     UNION ALL
     SELECT 'home_building_id', CAST(home_building_id AS TEXT) FROM victim_info
     UNION ALL
@@ -21,5 +21,5 @@ FROM (
     SELECT 'income_level', CAST(income_level AS TEXT) FROM victim_info
 ) AS attributes
 GROUP BY attribute_name, attribute_value
-HAVING COUNT(*) > 2;
+HAVING COUNT(*) > 2
 ORDER BY attribute_cnt DESC;
