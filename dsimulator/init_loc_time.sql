@@ -32,6 +32,8 @@ CREATE TEMP TABLE loc_time(
 	arrive        INTEGER NOT NULL,
 	-- This is not forced to be NOT NULL so there wouldn't be errors with unconnected graph or impossible constraints.
 	leave         INTEGER,
+	dst           INTEGER NOT NULL,
+	t_dst         INTEGER NOT NULL,
 	              PRIMARY KEY(inhabitant_id, vertex_id, arrive)
 );
 
@@ -41,7 +43,7 @@ DROP TRIGGER IF EXISTS insert_loc_time;
 CREATE TEMP TRIGGER insert_loc_time AFTER INSERT ON loc_time
 WHEN
 	-- Stop when the destination is reached.
-	NEW.vertex_id <> (SELECT MIN(dst) FROM src_dst WHERE inhabitant_id = NEW.inhabitant_id)
+	NEW.vertex_id <> NEW.dst
 BEGIN
 	-- Traverse one edge and wait at the neighboring vertex for a random amount of time,
 	-- such that the current time, plus the time to traverse the edge,
@@ -49,15 +51,15 @@ BEGIN
 	-- and plus the random waiting time does not exceed the constraint.
 	-- Then randomly choose one plausible edge to go through.
 	INSERT INTO loc_time
-		  SELECT inhabitant_id, end, NEW.leave + cost_min,
-		         NEW.leave + cost_min + ABS(RANDOM()) % (t_dst - (NEW.leave + cost_min) + 1
-		         - (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = src_dst.dst))
-		    FROM src_dst, edge
-		   WHERE inhabitant_id = NEW.inhabitant_id
-		         AND start = NEW.vertex_id
+		  SELECT NEW.inhabitant_id, end, NEW.leave + cost_min,
+		         NEW.leave + cost_min + ABS(RANDOM()) % (NEW.t_dst - (NEW.leave + cost_min) + 1
+		         - (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = NEW.dst)),
+			     NEW.dst, NEW.t_dst
+		    FROM edge
+		   WHERE start = NEW.vertex_id
 		         AND NEW.leave + cost_min +
-		         (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = src_dst.dst)
-		         <= t_dst
+		         (SELECT MIN(d) FROM dist WHERE dist.src = end AND dist.dst = NEW.dst)
+		         <= NEW.t_dst
 		ORDER BY RANDOM()
 		   LIMIT 1;
 END;
