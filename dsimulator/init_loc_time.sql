@@ -20,7 +20,7 @@ CREATE TEMP TABLE src_dst(
 	dst           INTEGER NOT NULL,
 	t_src         INTEGER NOT NULL,
 	t_dst         INTEGER NOT NULL,
-	              PRIMARY KEY(inhabitant_id)
+	              PRIMARY KEY(inhabitant_id, src, dst)
 );
 
 DROP TABLE IF EXISTS loc_time;
