@@ -173,7 +173,7 @@ def init_status(con: sqlite3.Connection):
     con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 1000)")
 
 
-def generate_map() -> str:
+def generate_map(con: sqlite3.Connection) -> None:
     """Return a query that inserts a random-generated map into the database."""
     result = ''
     for y in range(10):
@@ -212,5 +212,6 @@ def generate_map() -> str:
                 else:
                     result = result + template.format((y + 1) * 10 + x + random.choice([-1, 1]), y * 10 + x, random.randint(10, 20))
             x = x + random.randint(1, 3)
-
-    return result
+    
+    for insert_statement in result.split(';'):
+        con.execute(insert_statement)

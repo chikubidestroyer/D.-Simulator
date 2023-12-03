@@ -48,9 +48,12 @@ def init_game() -> None:
                                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
                     (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
 
+        gen.generate_map(con)
         gen.generate_home(con)
         gen.generate_workplace(con)
-        # con.execute(gen.generate_inhabitant(con))
+        gen.generate_inhabitants_and_relationships(con)
+        
+        
 
 
 def close_game() -> None:
