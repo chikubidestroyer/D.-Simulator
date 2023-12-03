@@ -13,11 +13,15 @@ from typing import List, Tuple
 import math
 
 con = None
+day = 0
+resig_day = 15
 
 
 def init_game() -> None:
     """Create the schema for the in-memory game state database, then populate it procedurally."""
     global con
+    global day
+    global resig_day
     con = sqlite3.connect(":memory:")
 
     run_script('DDL.sql')
@@ -50,6 +54,14 @@ def init_game() -> None:
         gen.generate_inhabitants_and_relationships(con)
         gen.generate_test_killer(con)
         gen.init_status(con)
+        
+        
+        while day != resig_day:
+            
+            query_loc_time_inhabitant()
+            
+            day += 1
+            con.execute('UPDATE status SET day = ?', day)
         
         
 
