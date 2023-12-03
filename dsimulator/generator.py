@@ -90,16 +90,16 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
 
         # Randomly select a workplace tuple
         workplace = random.choice(workplace_list)
-        work = workplace[0]
-        occupation = workplace[2]
+        work = workplace[0]  # workplace_id
+        occupation = workplace[2]  # occupation_id
 
         # Query for the equivalent home building, occupation, and income_range
         h_build = con.execute('''
             SELECT home_building_id
             FROM occupation, income_range JOIN home USING (income_level)
-            WHERE income >= low AND income < high AND
+            WHERE income >= low AND (income < high OR high IS NULL) AND
                 occupation_id = ?
-        ''', (occupation)).fetchone()[0]
+        ''', (occupation,)).fetchone()[0]
 
         # Insert inhabitant into the database
         execute_query(template_inhabitant, (i, first_name, last_name, h_build, h_build, work, gender))
@@ -117,14 +117,14 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
     # Set an inhabitant with attributes matching the character of the killer
     killer_info = con.execute('''
         SELECT home_building_id, workplace_id
-        FROM workplace JOIN occupation USING (occupation_id), income_range JOIN home USING (income_level)
+        FROM workplace JOIN occupation USING(occupation_id), income_range JOIN home USING(income_level)
         WHERE occupation_name = "Student" AND
             income >= low AND income < high
     ''').fetchone()
 
     # Insert killer inhabitant
     execute_query(template_inhabitant, (num_inhab - 1, "Light", "Yagami", killer_info['home_building_id'],
-                                         killer_info['home_building_id'], killer_info['workplace_id'], 'm'))
+                                        killer_info['home_building_id'], killer_info['workplace_id'], 'm'))
 
     # Generate relationships between inhabitants
     for inhabitant in inhabitants:
@@ -143,10 +143,10 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
 
         enemy = random.choice(inhabitants)
         execute_query(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
-        
+
         friend = random.choice(inhabitants)
         execute_query(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
-        
+
         colleagues = [
             other for other in different_inhabitants if
             other['workplace_id'] == inhabitant['workplace_id']
@@ -155,11 +155,9 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             execute_query(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
 
 
-    
-        
 def generate_test_killer(con: sqlite3.Connection):
     ''' generate only one killer for testing purposes'''
-    
+
     con.execute("INSERT INTO killer VALUES(0)")
     template = "INSERT killer_chara VALUES(0, {0}, {1})"
     con.execute(template.format("rapist", 15))
@@ -212,9 +210,10 @@ def generate_map(con: sqlite3.Connection) -> None:
                 else:
                     result = result + template.format((y + 1) * 10 + x + random.choice([-1, 1]), y * 10 + x, random.randint(10, 20))
             x = x + random.randint(1, 3)
-    
+
     for insert_statement in result.split(';'):
         con.execute(insert_statement)
+
 
 def execute_query(query):
     cursor.execute(query)

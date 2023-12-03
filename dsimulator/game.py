@@ -29,24 +29,25 @@ def init_game() -> None:
     # Currently just inserting some testing data.
     # TODO: Implement procedural generation for the game world.
     with con:
-        cur = con.executescript(gen.generate_map())
+        # gen.generate_map(con)
+        # cur = con.executescript(gen.generate_map(con))
         # cur = con.execute('INSERT INTO vertex (x, y) VALUES (1, 2)')
         # vertex_id = cur.lastrowid
-        vertex_id = 0
-        con.execute(
-            'INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)', (vertex_id, 'Home', 0))
+        # vertex_id = 0
+        # con.execute(
+        #     'INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)', (vertex_id, 'Home', 0))
 
-        cur = con.execute(
-            'INSERT INTO income_range (low, high) VALUES (1000, 2000)')
-        income_level = cur.lastrowid
+        # cur = con.execute(
+        #     'INSERT INTO income_range (low, high) VALUES (1000, 2000)')
+        # income_level = cur.lastrowid
 
-        # first_name, last_name = gen.generate_random_names(1)[0]
-        first_name, last_name = 'John', 'Doe'
-        cur = con.execute(
-            'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
-        con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                    (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
+        # # first_name, last_name = gen.generate_random_names(1)[0]
+        # first_name, last_name = 'John', 'Doe'
+        # cur = con.execute(
+        #     'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
+        # con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
+        #                            VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        #             (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
 
         gen.generate_map(con)
         gen.generate_home(con)
@@ -54,16 +55,13 @@ def init_game() -> None:
         gen.generate_inhabitants_and_relationships(con)
         gen.generate_test_killer(con)
         gen.init_status(con)
-        
-        
+
         while day != resig_day:
-            
+
             query_loc_time_inhabitant()
-            
+
             day += 1
             con.execute('UPDATE status SET day = ?', day)
-        
-        
 
 
 def close_game() -> None:
@@ -251,7 +249,8 @@ def query_loc_time() -> None:
     """Insert the location-time tuples into `loc_time`, specifying paths that satisfy the constraints given in `src_dst`."""
     with con:
         run_script('query_loc_time.sql')
-        
+
+
 def init_commonality_view() -> None:
     with con:
         run_script('victim_common_attribute.sql')
@@ -411,6 +410,7 @@ def query_witness_count(vertex_id: int):
                        ORDER BY c DESC''',
                       vertex_id)
     return cur
+
 
 def query_victim_commonality():
     '''
