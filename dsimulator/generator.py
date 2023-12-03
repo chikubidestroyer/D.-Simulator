@@ -90,8 +90,8 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
 
         # Randomly select a workplace tuple
         workplace = random.choice(workplace_list)
-        work = workplace['workplace_id']
-        occupation = workplace['occupation_id']
+        work = workplace[0]
+        occupation = workplace[2]
 
         # Query for the equivalent home building, occupation, and income_range
         h_build = con.execute('''
@@ -99,7 +99,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             FROM occupation, income_range JOIN home USING (income_level)
             WHERE income >= low AND income < high AND
                 occupation_id = ?
-        ''', (occupation,)).fetchone()['home_building_id']
+        ''', (occupation)).fetchone()[0]
 
         # Insert inhabitant into the database
         execute_query(template_inhabitant, (i, first_name, last_name, h_build, h_build, work, gender))
@@ -110,7 +110,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             'gender': gender,
             'first_name': first_name,
             'last_name': last_name,
-            'home_building': h_build
+            'home_building': h_build,
             'workplace_id': work
         })
 
