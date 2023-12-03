@@ -31,7 +31,7 @@ WITH killer_info AS (
 	SELECT inhabitant.* FROM status, inhabitant
   	WHERE status.killer_inhabitant_id = inhabitant.inhabitant_id
 )
-SELECT inhabitant_id, chara_description, chara_weight, vertex_id
+SELECT DISTINCT inhabitant_id, chara_description, chara_weight, vertex_id
 FROM pot_victim NATURAL JOIN inhabitant AS i NATURAL JOIN home AS h NATURAL JOIN workplace, 
 	killer_chara AS k, status
 WHERE status.killer_id = k.killer_id AND

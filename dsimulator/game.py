@@ -432,6 +432,8 @@ def select_victim():
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
     con.executescript(script)
+    # The following query outputs one tuple containing information of the selected victim: 
+    # inhabitant_id, scene_vertex_id, min_of_death, weighted_sum (killer characteristics fulfilled)
     cur = con.execute('''
         SELECT pot_victim.inhabitant_id, pot_victim.vertex_id AS scene_vertex_id, (ABS(RANDOM())%(end_min-start_min) + start_min) AS min_of_death, weight_sum
         FROM (SELECT inhabitant_id, vertex_id, sum(chara_weight) AS weight_sum
