@@ -215,7 +215,11 @@ def generate_map(con: sqlite3.Connection) -> None:
                     result = result + template.format(y * 10 + x, (y + 1) * 10 + x + random.choice([-1, 1]), random.randint(10, 20))
                 else:
                     result = result + template.format((y + 1) * 10 + x + random.choice([-1, 1]), y * 10 + x, random.randint(10, 20))
+<<<<<<< HEAD
             x = x + random.randint(1, 3)
 
     for insert_statement in result.split(';'):
         con.execute(insert_statement)
+=======
+            x = x + random.randint(1, 3)
+>>>>>>> 90ee51d (bug fixes)
