@@ -238,6 +238,10 @@ def query_loc_time() -> None:
     """Insert the location-time tuples into `loc_time`, specifying paths that satisfy the constraints given in `src_dst`."""
     with con:
         run_script('query_loc_time.sql')
+        
+def init_commonality_view() -> None:
+    with con:
+        run_script('victim_common_attribute.sql')
 
 
 def query_loc_time_inhabitant() -> None:
@@ -394,3 +398,10 @@ def query_witness_count(vertex_id: int):
                        ORDER BY c DESC''',
                       vertex_id)
     return cur
+
+def query_victim_commonality():
+    '''
+    List the common attributes among victims
+    '''
+    cur = con.execute("SELECT * FROM commonality")
+    return cur.fetchall()
