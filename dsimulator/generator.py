@@ -102,7 +102,8 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
         ''', (occupation,)).fetchone()[0]
 
         # Insert inhabitant into the database
-        execute_query(template_inhabitant, (i, first_name, last_name, h_build, h_build, work, gender))
+        with con:
+            con.execute(template_inhabitant, (i, first_name, last_name, h_build, h_build, work, gender))
 
         # Save inhabitant details for later relationship generation
         inhabitants.append({
@@ -118,13 +119,14 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
     killer_info = con.execute('''
         SELECT home_building_id, workplace_id
         FROM workplace JOIN occupation USING(occupation_id), income_range JOIN home USING(income_level)
-        WHERE occupation_name = "Student" AND
-            income >= low AND income < high
+        WHERE income >= low AND (income < high OR high IS NULL)
     ''').fetchone()
 
     # Insert killer inhabitant
-    execute_query(template_inhabitant, (num_inhab - 1, "Light", "Yagami", killer_info['home_building_id'],
-                                        killer_info['home_building_id'], killer_info['workplace_id'], 'm'))
+    with con:
+        # killer_info['home_building_id'], killer_info['home_building_id'], killer_info['workplace_id']
+        con.execute(template_inhabitant, (num_inhab - 1, "Light", "Yagami", killer_info[0],
+                                          killer_info[0], killer_info[1], 'm'))
 
     # Generate relationships between inhabitants
     for inhabitant in inhabitants:
@@ -138,21 +140,25 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             other for other in different_inhabitants if
             other['last_name'] == inhabitant['last_name']
         ]
-        for relative in related:
-            execute_query(template_relationship, (inhabitant['id'], relative['id'], "Relative"))
+        with con:
+            for relative in related:
+                con.execute(template_relationship, (inhabitant['id'], relative['id'], "Relative"))
 
         enemy = random.choice(inhabitants)
-        execute_query(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
+        with con:
+            con.execute(template_relationship, (inhabitant['id'], enemy['id'], "Enemy"))
 
         friend = random.choice(inhabitants)
-        execute_query(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
+        with con:
+            con.execute(template_relationship, (inhabitant['id'], friend['id'], "Friend"))
 
         colleagues = [
             other for other in different_inhabitants if
             other['workplace_id'] == inhabitant['workplace_id']
         ]
         for colleague in colleagues:
-            execute_query(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
+            with con:
+                con.execute(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
 
 
 def generate_test_killer(con: sqlite3.Connection):
@@ -213,8 +219,3 @@ def generate_map(con: sqlite3.Connection) -> None:
 
     for insert_statement in result.split(';'):
         con.execute(insert_statement)
-
-
-def execute_query(query):
-    cursor.execute(query)
-    conn.commit()
