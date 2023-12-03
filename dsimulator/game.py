@@ -13,10 +13,6 @@ from typing import List, Tuple
 import math
 
 con = None
-w = None  # weight graph of edges
-num_vertex = 0  # number of vertex in game
-distance_graph = None  # directed graph for map in the game, calculated in floyd_warshall
-pi_graph = None  # parent graph indicating path for SP
 
 
 def init_game() -> None:
