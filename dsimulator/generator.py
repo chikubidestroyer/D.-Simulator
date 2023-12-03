@@ -215,3 +215,7 @@ def generate_map(con: sqlite3.Connection) -> None:
     
     for insert_statement in result.split(';'):
         con.execute(insert_statement)
+
+def execute_query(query):
+    cursor.execute(query)
+    conn.commit()
