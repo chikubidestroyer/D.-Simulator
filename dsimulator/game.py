@@ -300,40 +300,6 @@ def run_script(file_name: str) -> None:
         con.executescript(script)
 
 
-def test() -> None:
-    """General testing function."""
-
-    cur = con.execute('SELECT * FROM income_range')
-    print('income_range:')
-    print(cur.fetchall())
-
-    cur = con.execute('SELECT * FROM occupation')
-    print('occupation:')
-    print(cur.fetchall())
-
-    cur = con.execute('SELECT * FROM building')
-    print('building:')
-    print(cur.fetchall())
-
-    cur = con.execute('SELECT * FROM workplace')
-    print('workplace:')
-    print(cur.fetchall())
-
-    query_shortest_path()
-    print('1 -> 4 less than 100 mins:')
-    print(query_via_point_constraint(1, 4, 100))
-
-    return
-
-    query_loc_time_inhabitant()
-    cur = con.execute('SELECT * FROM dist LIMIT 10')
-    print('dist:')
-    print(cur.fetchall())
-    cur = con.execute('SELECT * FROM loc_time LIMIT 10')
-    print('loc_time:')
-    print(cur.fetchall())
-
-
 def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gender="gender", dead=None, home_building_name="home_building_name", custody=None, suspect=None):
     """Returns the query result inputted by the player
     """
@@ -432,7 +398,7 @@ def select_victim():
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
     con.executescript(script)
-    # The following query outputs one tuple containing information of the selected victim: 
+    # The following query outputs one tuple containing information of the selected victim:
     # inhabitant_id, scene_vertex_id, min_of_death, weighted_sum (killer characteristics fulfilled)
     cur = con.execute('''
         SELECT pot_victim.inhabitant_id, pot_victim.vertex_id AS scene_vertex_id, (ABS(RANDOM())%(end_min-start_min) + start_min) AS min_of_death, weight_sum
@@ -444,6 +410,3 @@ def select_victim():
         ORDER BY weight_sum DESC;
     ''')
     return cur.fetchone()
-
-
-init_game()
