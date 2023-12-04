@@ -7,7 +7,8 @@ import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 import dsimulator.ui.save as save
 from dsimulator.game import close_game, query_inhabitant, list_vertex, list_edge, \
-    list_building, query_building_summary, query_home_income, query_workplace_occupation
+    list_building, query_building_summary, query_home_income, query_workplace_occupation, \
+    lockdown
 
 
 def to_save() -> None:
@@ -23,6 +24,8 @@ def to_main() -> None:
     close_game()
     dpg.hide_item(game_window)
     dpg.show_item(main.main_window)
+    if dpg.does_item_exist('building_detail'):
+        close_building_detail()
     dpg.set_primary_window(main.main_window, True)
 
 
@@ -42,13 +45,17 @@ def show_building_detail(building_id: int) -> None:
 
     building_name, lockdown, home = query_building_summary(building_id)
     with dpg.group(tag='building_detail', parent=left_view):
+        dpg.add_text(building_name)
+
+        dpg.add_text(('Home, ' if home == 1 else 'Workplace, ')
+                     + ('under lockdown' if lockdown == 1 else 'not under lockdown'))
+
+        dpg.add_separator()
         with dpg.group(horizontal=True):
-            dpg.add_text(building_name)
             dpg.add_button(label='Close', callback=close_building_detail)
+            dpg.add_button(label='Set lockdown', callback=make_set_lockdown(building_id))
 
         if home == 1:
-            dpg.add_text('Home')
-
             low, high = query_home_income(building_id)
             if high is None:
                 dpg.add_text('Income equal or greater than {}'.format(low))
@@ -58,8 +65,7 @@ def show_building_detail(building_id: int) -> None:
             inhabitant_columns, inhabitant_rows = query_inhabitant(home_building_id=building_id)
         else:
             dpg.add_separator()
-            dpg.add_text('Workplace')
-
+            dpg.add_text('Occupations')
             occupation_columns, occupation_rows = query_workplace_occupation(building_id)
             with dpg.table(policy=dpg.mvTable_SizingStretchProp):
                 for c in occupation_columns:
@@ -86,6 +92,16 @@ def close_building_detail() -> None:
     """Close the building detail view."""
     dpg.delete_item('building_detail')
     dpg.show_item(map_view)
+
+
+def make_set_lockdown(building_id: int) -> Callable[None, None]:
+    """Return a function that sets a building to lockdown."""
+    def set_lockdown() -> None:
+        lockdown(building_id)
+        close_building_detail()
+        update_game_window()
+        show_building_detail(building_id)
+    return set_lockdown
 
 
 with dpg.window() as game_window:
