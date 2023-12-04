@@ -224,9 +224,11 @@ def create_lockdown_buidling_view() -> None:
 def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
     """Return the list of inhabitants having relations with subject."""
     cur = con.execute('''
-        SELECT object_id, description
-        FROM relationship
-        WHERE subject = {0}'''.format(subject_id))
+        SELECT first_name, last_name, description
+          FROM relationship
+               JOIN inhabitant
+               ON inhabitant_id = object_id
+         WHERE subject_id = {0}'''.format(subject_id))
     return cur.fetchall()
 
 
@@ -360,7 +362,36 @@ def query_inhabitant(income_lo=0, income_hi=math.inf, occupation=None, gender=No
             + '\nWHERE TRUE ' + required_predicate
     # print(query)
     cur = con.execute(query)
-    return ('inhabitant_id', 'first_name', 'last_name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), cur.fetchall()
+    return ('inhabitant_id', 'first_name', 'last_name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), \
+        cur.fetchall()
+
+
+def query_inhabitant_detail(inhabitant_id: int) -> Tuple[Tuple[str, ...], Tuple]:
+    cur = con.execute('''SELECT inhabitant_id, first_name, last_name,
+                                custody, dead, gender,
+                                h.building_name, h.lockdown,
+                                w.building_name, w.lockdown,
+                                occupation_name, income,
+                                arrive_min, leave_min
+                           FROM inhabitant
+                                JOIN building AS h
+                                ON home_building_id = h.building_id
+                                JOIN workplace
+                                USING(workplace_id)
+                                JOIN building AS w
+                                ON workplace_building_id = w.building_id
+                                JOIN occupation
+                                USING(occupation_id)
+                          WHERE inhabitant_id = ?''',
+                      (inhabitant_id,))
+
+    return ('inhabitant_id', 'first_name', 'last_name',
+            'custody', 'dead', 'gender',
+            'home_building_name', 'home_lockdown',
+            'workplace_building_name', 'workplace_lockdown',
+            'occupation_name', 'income',
+            'arrive_min', 'leave_min'), \
+        cur.fetchone()
 
 
 def query_via_point_constraint(start: int, end: int, mins: int):

@@ -8,7 +8,7 @@ import dsimulator.ui.main as main
 import dsimulator.ui.save as save
 from dsimulator.game import close_game, query_inhabitant, list_vertex, list_edge, \
     list_building, query_building_summary, query_home_income, query_workplace_occupation, \
-    lockdown
+    lockdown, query_inhabitant_detail, query_inhabitant_relationship
 
 
 def to_save() -> None:
@@ -24,8 +24,8 @@ def to_main() -> None:
     close_game()
     dpg.hide_item(game_window)
     dpg.show_item(main.main_window)
-    if dpg.does_item_exist('building_detail'):
-        close_building_detail()
+    close_building_detail()
+    close_inhabitant_detail()
     dpg.set_primary_window(main.main_window, True)
 
 
@@ -45,15 +45,13 @@ def show_building_detail(building_id: int) -> None:
 
     building_name, lockdown, home = query_building_summary(building_id)
     with dpg.group(tag='building_detail', parent=left_view):
-        dpg.add_text(building_name)
+        with dpg.group(horizontal=True):
+            dpg.add_text(building_name)
+            dpg.add_button(label='Close', callback=close_building_detail)
+            dpg.add_button(label='Set Lockdown', callback=make_set_lockdown(building_id))
 
         dpg.add_text(('Home, ' if home == 1 else 'Workplace, ')
                      + ('under lockdown' if lockdown == 1 else 'not under lockdown'))
-
-        dpg.add_separator()
-        with dpg.group(horizontal=True):
-            dpg.add_button(label='Close', callback=close_building_detail)
-            dpg.add_button(label='Set lockdown', callback=make_set_lockdown(building_id))
 
         if home == 1:
             low, high = query_home_income(building_id)
@@ -82,19 +80,23 @@ def show_building_detail(building_id: int) -> None:
         with dpg.table(policy=dpg.mvTable_SizingStretchProp):
             for c in inhabitant_columns:
                 dpg.add_table_column(label=c)
+            dpg.add_table_column()
+
             for r in inhabitant_rows:
                 with dpg.table_row():
                     for c in r:
                         dpg.add_text(c)
+                    dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
 
 
 def close_building_detail() -> None:
     """Close the building detail view."""
-    dpg.delete_item('building_detail')
-    dpg.show_item(map_view)
+    if dpg.does_item_exist('building_detail'):
+        dpg.delete_item('building_detail')
+        dpg.show_item(map_view)
 
 
-def make_set_lockdown(building_id: int) -> Callable[None, None]:
+def make_set_lockdown(building_id: int) -> Callable[[], None]:
     """Return a function that sets a building to lockdown."""
     def set_lockdown() -> None:
         lockdown(building_id)
@@ -104,6 +106,50 @@ def make_set_lockdown(building_id: int) -> Callable[None, None]:
     return set_lockdown
 
 
+def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
+    """Create a callback function that is called when a inhabitant row is clicked."""
+    def inhabitant_clicked() -> None:
+        dpg.hide_item(query_view)
+        close_inhabitant_detail()
+        with dpg.group(tag='inhabitant_detail', parent=right_view):
+            with dpg.group(horizontal=True):
+                dpg.add_text('Inhabitant Detail')
+                dpg.add_button(label='Close', callback=close_inhabitant_detail)
+
+            keys, values = query_inhabitant_detail(inhabitant_id)
+            with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+                dpg.add_table_column()
+                dpg.add_table_column()
+
+                for k, v in zip(keys, values):
+                    with dpg.table_row():
+                        dpg.add_text(k)
+                        dpg.add_text(v)
+
+            dpg.add_separator()
+            dpg.add_text('Relationships')
+
+            relationship_rows = query_inhabitant_relationship(inhabitant_id)
+            with dpg.table(policy=dpg.mvTable_SizingStretchProp):
+                dpg.add_table_column(label='object_first_name')
+                dpg.add_table_column(label='object_last_name')
+                dpg.add_table_column(label='description')
+
+                for r in relationship_rows:
+                    with dpg.table_row():
+                        for c in r:
+                            dpg.add_text(c)
+
+    return inhabitant_clicked
+
+
+def close_inhabitant_detail() -> None:
+    """Close the inhabitant detail view."""
+    if dpg.does_item_exist('inhabitant_detail'):
+        dpg.delete_item('inhabitant_detail')
+        dpg.show_item(query_view)
+
+
 with dpg.window() as game_window:
     with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
         with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
@@ -111,9 +157,10 @@ with dpg.window() as game_window:
                 dpg.add_text('Map')
                 game_map = dpg.add_drawlist(width=1500, height=1500)
 
-        with dpg.child_window():
-            dpg.add_text('Query Result')
-            query_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
+        with dpg.child_window() as right_view:
+            with dpg.group() as query_view:
+                dpg.add_text('Query Result')
+                query_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
 
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save Game', callback=to_save)
@@ -137,9 +184,9 @@ def update_game_window() -> None:
         dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
         buildings.append((xd, yd, building_id))
 
-    with dpg.item_handler_registry() as handler:
+    with dpg.item_handler_registry() as map_handler:
         dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
-    dpg.bind_item_handler_registry(game_map, handler)
+    dpg.bind_item_handler_registry(game_map, map_handler)
 
     font_size = 20
     shift = 12
@@ -161,7 +208,10 @@ def update_game_window() -> None:
     inhabitant_columns, inhabitant_rows = query_inhabitant()
     for c in inhabitant_columns:
         dpg.add_table_column(label=c, parent=query_table)
+    dpg.add_table_column(parent=query_table)
+
     for r in inhabitant_rows:
-        with dpg.table_row(parent=query_table):
+        with dpg.table_row(parent=query_table) as row:
             for c in r:
                 dpg.add_text(c)
+            dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
