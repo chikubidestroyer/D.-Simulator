@@ -1,12 +1,13 @@
 """The user interface for the game window where the game is running in."""
 
+from typing import List, Tuple, Callable
+import math
+from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 import dsimulator.ui.save as save
-from dsimulator.game import close_game, list_inhabitant, list_vertex, list_edge, list_building
-from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
-import math
-from typing import List, Tuple, Callable
+from dsimulator.game import close_game, query_inhabitant, list_vertex, list_edge, \
+    list_building, query_building_summary, query_home_income, query_workplace_occupation
 
 
 def to_save() -> None:
@@ -31,15 +32,68 @@ def make_building_clicked(buildings: List[Tuple[int, int, int]], b_size: int) ->
         pos = dpg.get_drawing_mouse_pos()
         for b in buildings:
             if b[0] - b_size <= pos[0] <= b[0] + b_size and b[1] - b_size <= pos[1] <= b[1] + b_size:
-                print('Clicked building: {}'.format(b[2]))
+                show_building_detail(b[2])
     return building_clicked
+
+
+def show_building_detail(building_id: int) -> None:
+    """Replace the game map with a view of building detail."""
+    dpg.hide_item(map_view)
+
+    building_name, lockdown, home = query_building_summary(building_id)
+    with dpg.group(tag='building_detail', parent=left_view):
+        with dpg.group(horizontal=True):
+            dpg.add_text(building_name)
+            dpg.add_button(label='Close', callback=close_building_detail)
+
+        if home == 1:
+            dpg.add_text('Home')
+
+            low, high = query_home_income(building_id)
+            if high is None:
+                dpg.add_text('Income equal or greater than {}'.format(low))
+            else:
+                dpg.add_text('Income between {} and {}'.format(low, high))
+
+            inhabitant_columns, inhabitant_rows = query_inhabitant(home_building_id=building_id)
+        else:
+            dpg.add_separator()
+            dpg.add_text('Workplace')
+
+            occupation_columns, occupation_rows = query_workplace_occupation(building_id)
+            with dpg.table(policy=dpg.mvTable_SizingStretchProp):
+                for c in occupation_columns:
+                    dpg.add_table_column(label=c)
+                for r in occupation_rows:
+                    with dpg.table_row():
+                        for c in r:
+                            dpg.add_text(c)
+
+            inhabitant_columns, inhabitant_rows = query_inhabitant(workplace_building_id=building_id)
+
+        dpg.add_separator()
+        dpg.add_text('Inhabitants')
+        with dpg.table(policy=dpg.mvTable_SizingStretchProp):
+            for c in inhabitant_columns:
+                dpg.add_table_column(label=c)
+            for r in inhabitant_rows:
+                with dpg.table_row():
+                    for c in r:
+                        dpg.add_text(c)
+
+
+def close_building_detail() -> None:
+    """Close the building detail view."""
+    dpg.delete_item('building_detail')
+    dpg.show_item(map_view)
 
 
 with dpg.window() as game_window:
     with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
-        with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True):
-            dpg.add_text('Map')
-            game_map = dpg.add_drawlist(width=1500, height=1500)
+        with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
+            with dpg.group() as map_view:
+                dpg.add_text('Map')
+                game_map = dpg.add_drawlist(width=1500, height=1500)
 
         with dpg.child_window():
             dpg.add_text('Query Result')
@@ -61,11 +115,11 @@ def update_game_window() -> None:
 
     buildings = []
     b_size = 20
-    for x, y, id in list_building():
+    for x, y, building_id in list_building():
         xd = (x + offset) * scale
         yd = (y + offset) * scale
         dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
-        buildings.append((xd, yd, id))
+        buildings.append((xd, yd, building_id))
 
     with dpg.item_handler_registry() as handler:
         dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
@@ -88,7 +142,7 @@ def update_game_window() -> None:
                       str(c), size=font_size, parent=game_map)
 
     dpg.delete_item(query_table, children_only=True)
-    inhabitant_columns, inhabitant_rows = list_inhabitant()
+    inhabitant_columns, inhabitant_rows = query_inhabitant()
     for c in inhabitant_columns:
         dpg.add_table_column(label=c, parent=query_table)
     for r in inhabitant_rows:

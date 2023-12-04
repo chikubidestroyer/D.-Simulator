@@ -22,7 +22,10 @@ def init_game() -> None:
     global con
     global day
     global resig_day
-    con = sqlite3.connect(":memory:")
+
+    # check_same_thread=False is necessary for allowing query by UI handler.
+    # I am not sure why the UI is still multithreaded even though I turned on manual callback management.
+    con = sqlite3.connect(":memory:", check_same_thread=False)
 
     run_script('DDL.sql')
 
@@ -95,7 +98,11 @@ def list_save() -> List[Tuple[int, str]]:
 def read_save(save_id: int) -> None:
     """Read the saved database into the in-memory database."""
     global con
-    con = sqlite3.connect(":memory:")
+
+    # check_same_thread=False is necessary for allowing query by UI handler.
+    # I am not sure why the UI is still multithreaded even though I turned on manual callback management.
+    con = sqlite3.connect(":memory:", check_same_thread=False)
+
     save_con = sqlite3.connect(to_save_path(save_id))
     with save_con:
         save_con.backup(con)
@@ -132,16 +139,6 @@ def delete_save(save_id: int) -> None:
     os.remove(to_save_path(save_id))
 
 
-def list_inhabitant() -> Tuple[Tuple[str, ...], List[Tuple]]:
-    """Return all inhabitants' attribute names that are known by the player and the respective values."""
-    cur = con.execute('''SELECT inhabitant_id, first_name, last_name, h.building_name, workplace_id, custody, dead, gender
-                           FROM inhabitant
-                                JOIN building AS h
-                                ON home_building_id = building_id''')
-    return ('inhabitant_id', 'first_name', 'last_name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), \
-        cur.fetchall()
-
-
 def list_vertex() -> List[Tuple[int, int]]:
     """Return a list of coordinates for all vertices."""
     cur = con.execute('SELECT x, y FROM vertex')
@@ -171,6 +168,39 @@ def list_building() -> List[Tuple[int, int, int]]:
                            JOIN vertex
                                 ON building_id=vertex_id''')
     return cur.fetchall()
+
+
+def query_building_summary(building_id: int) -> Tuple[str, int, int]:
+    """Get the name and lockdown status of a building and whether it is a home."""
+    cur = con.execute('SELECT building_name, lockdown FROM building WHERE building_id = ?', (building_id,))
+    building_name, lockdown = cur.fetchone()
+    cur = con.execute('SELECT COUNT(*) FROM home WHERE home_building_id = ?', (building_id,))
+    home = cur.fetchone()[0]
+    return building_name, lockdown, home
+
+
+def query_home_income(building_id: int) -> Tuple[int, int, int]:
+    """Get the income range of a home building."""
+    cur = con.execute('''SELECT low, high
+                           FROM home
+                                JOIN
+                                income_range
+                                USING(income_level)
+                          WHERE home_building_id = ?''',
+                      (building_id,))
+    return cur.fetchone()
+
+
+def query_workplace_occupation(building_id: int) -> Tuple[Tuple[str, ...], Tuple]:
+    """List the occupations for the occupations in a building."""
+    cur = con.execute('''SELECT occupation_name, income, arrive_min, leave_min
+                           FROM workplace
+                                JOIN occupation
+                                USING(occupation_id)
+                          WHERE workplace_building_id = ?''',
+                      (building_id,))
+    return ('occupation_name', 'income', 'arrive_min', 'leave_min'), \
+        cur.fetchall()
 
 
 def lockdown(building_id: int) -> None:
@@ -279,21 +309,26 @@ def run_script(file_name: str) -> None:
         con.executescript(script)
 
 
-def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gender="gender", dead=None, home_building_name="home_building_name", custody=None, suspect=None):
-    """Returns the query result inputted by the player
+def query_inhabitant(income_lo=0, income_hi=math.inf, occupation=None, gender=None, dead=None, home_building_id=None, home_building_name=None, workplace_building_id=None, workplace_building_name=None, custody=None, suspect=None):
+    """Query inhabitant given the user-specified predicate.
     """
     global con
     required_tables = ""
     required_predicate = ""
-    if income_lo != 0 or income_hi != math.inf or occupation != None:
-        required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation "
+    if income_lo != 0 or income_hi != math.inf \
+            or occupation != None \
+            or workplace_building_id != None or workplace_building_name != None:
+        required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation JOIN building AS w ON workplace_building_id = w.building_id"
         if income_hi != math.inf:
             required_predicate = required_predicate + " AND income >= " + str(income_lo) + " AND income <= " + str(income_hi)
         else:
             required_predicate = required_predicate + " AND income >= " + str(income_lo)
 
-        if occupation != None:
-            required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
+            if occupation != None:
+                required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
+
+    if gender != None:
+        required_predicate = required_predicate + " AND gender = '{0}'".format(gender)
 
     if dead == False:
         required_predicate = required_predicate + " AND dead = 0"
@@ -304,24 +339,28 @@ def user_inhabitant_query(income_lo=0, income_hi=math.inf, occupation=None, gend
     elif custody == True:
         required_predicate = required_predicate + " AND custody = 0"
 
+    if home_building_id != None:
+        required_predicate = required_predicate + " AND h.building_id = {0}".format(home_building_id)
+    if home_building_name != None:
+        required_predicate = required_predicate + " AND h.building_name = '{0}'".format(home_building_name)
+    if workplace_building_id != None:
+        required_predicate = required_predicate + " AND w.building_id = {0}".format(workplace_building_id)
+    if workplace_building_name != None:
+        required_predicate = required_predicate + " AND w.building_name = '{0}'".format(workplace_building_name)
+
     if suspect == True:
         required_predicate = required_predicate + " AND EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
     elif suspect == False:
         required_predicate = required_predicate + " AND NOT EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
 
-    '''
-    print("""
-                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
-                FROM inhabitant NATURAL JOIN building AS home """ + required_tables +
-                """
-                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
-    '''
-    cur = con.execute("""
-                SELECT inhabitant_id, name, home.building_name, workplace_id, custody, dead, gender
-                FROM inhabitant NATURAL JOIN building AS home """ + required_tables +
-                      """
-                WHERE gender = {0} AND home_building_name = '{1}'""".format(gender, home_building_name) + required_predicate)
-    return cur.fetchall()
+    query = """ SELECT inhabitant_id, first_name, last_name, h.building_name, workplace_id, custody, dead, gender
+                  FROM inhabitant
+                       JOIN building AS h
+                       ON home_building_id = h.building_id """ + required_tables \
+            + '\nWHERE TRUE ' + required_predicate
+    # print(query)
+    cur = con.execute(query)
+    return ('inhabitant_id', 'first_name', 'last_name', 'home_building_name', 'workplace_id', 'custody', 'dead', 'gender'), cur.fetchall()
 
 
 def query_via_point_constraint(start: int, end: int, mins: int):

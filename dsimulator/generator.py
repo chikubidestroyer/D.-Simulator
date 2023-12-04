@@ -28,8 +28,8 @@ def get_free_vertex(con: sqlite3.Connection) -> int:
 
 def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
     """Generate the homes and income ranges given the database connection containing vertices."""
-    income_name = ['low income', 'medium income', 'high income']
-    income = [(1, 30000), (30000, 90000), (90000, None)] # [1,3000), [3000,90000), [90000,inf) this was the bug from previous meeting
+    income_name = ['Low Income Home', 'Medium Income Home', 'High Income Home']
+    income = [(1, 30000), (30000, 90000), (90000, None)]  # [1,3000), [3000,90000), [90000,inf) this was the bug from previous meeting
     with con:
         for n, r in zip(income_name, income):
             cur = con.execute('INSERT INTO income_range (low, high) VALUES (?, ?)', r)
@@ -61,6 +61,12 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
 
             # Use a company name as the name of the building.
             building_name = fk.company()
+            while True:
+                cur = con.execute('SELECT COUNT(*) FROM building WHERE building_name = ?', (building_name,))
+                if cur.fetchone()[0] == 0:
+                    break
+                building_name = fk.company()
+
             con.execute('INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)',
                         (building_id, building_name, 0))
 
@@ -159,7 +165,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
             other for other in different_inhabitants if
             other['workplace_id'] == inhabitant['workplace_id']
         ]
-        
+
         for colleague in colleagues:
             with con:
                 con.execute(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
@@ -170,9 +176,9 @@ def generate_test_killer(con: sqlite3.Connection):
 
     con.execute("INSERT INTO killer VALUES(0)")
     template = "INSERT INTO killer_chara VALUES(0, ?, ?)"
-    con.execute(template,("rapist", 15))
-    con.execute(template,("high income", 5))
-    con.execute(template,("colleague", 10))
+    con.execute(template, ("rapist", 15))
+    con.execute(template, ("high income", 5))
+    con.execute(template, ("colleague", 10))
 
 
 def init_status(con: sqlite3.Connection):
