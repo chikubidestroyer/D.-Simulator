@@ -26,50 +26,27 @@ def init_game() -> None:
 
     run_script('DDL.sql')
 
-    # Currently just inserting some testing data.
-    # TODO: Implement procedural generation for the game world.
-    with con:
-        # gen.generate_map(con)
-        # cur = con.executescript(gen.generate_map(con))
-        # cur = con.execute('INSERT INTO vertex (x, y) VALUES (1, 2)')
-        # vertex_id = cur.lastrowid
-        # vertex_id = 0
-        # con.execute(
-        #     'INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)', (vertex_id, 'Home', 0))
+    gen.generate_map(con)
+    gen.generate_home(con)
+    gen.generate_workplace(con)
+    gen.generate_inhabitants_and_relationships(con)
+    gen.generate_test_killer(con)
+    gen.init_status(con)
+    print('data population complete')
+    init_commonality_view()
+    print('commonality view test complete')
+    query_loc_time_inhabitant()
+    print(select_victim())
+    print('kill_sequence test complete')
 
-        # cur = con.execute(
-        #     'INSERT INTO income_range (low, high) VALUES (1000, 2000)')
-        # income_level = cur.lastrowid
+    '''
+    while day != resig_day:
 
-        # # first_name, last_name = gen.generate_random_names(1)[0]
-        # first_name, last_name = 'John', 'Doe'
-        # cur = con.execute(
-        #     'INSERT INTO home (home_building_id, income_level) VALUES (?, ?)', (vertex_id, income_level))
-        # con.execute('''INSERT INTO inhabitant (first_name, last_name, home_building_id, loc_building_id, custody, dead, gender)
-        #                            VALUES (?, ?, ?, ?, ?, ?, ?)''',
-        #             (first_name, last_name, vertex_id, vertex_id, 0, 0, 'm'))
-
-        gen.generate_map(con)
-        gen.generate_home(con)
-        gen.generate_workplace(con)
-        gen.generate_inhabitants_and_relationships(con)
-        gen.generate_test_killer(con)
-        gen.init_status(con)
-        print('data population complete')
-        init_commonality_view()
-        print('commonality view test complete')
         query_loc_time_inhabitant()
-        print(select_victim())
-        print('kill_sequence test complete')
 
-        '''
-        while day != resig_day:
-
-            query_loc_time_inhabitant()
-
-            day += 1
-            con.execute('UPDATE status SET day = ?', day)
-        '''
+        day += 1
+        con.execute('UPDATE status SET day = ?', day)
+    '''
 
 
 def close_game() -> None:
@@ -240,6 +217,8 @@ def modify_suspect(inhabitant_id: int) -> None:
             DELETE FROM suspect
             WHERE inhabitant_id = {0}'''.format(inhabitant_id))
 
+# TODO: Exclude buildings under lockdown.
+
 
 def query_shortest_path() -> None:
     """Get the shortest path between all vertex pairs in a temp table `dist`."""
@@ -361,6 +340,7 @@ def query_via_point_constraint(start: int, end: int, mins: int):
     return cur.fetchall()
 
 
+# TODO: Exclude counts after an inhabitant has been killed.
 # TODO: Test this with inhabitant data.
 
 
