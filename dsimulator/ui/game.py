@@ -8,7 +8,8 @@ import dsimulator.ui.main as main
 import dsimulator.ui.save as save
 from dsimulator.game import close_game, query_inhabitant, list_vertex, list_edge, \
     list_building, query_building_summary, query_home_income, query_workplace_occupation, \
-    lockdown, query_inhabitant_detail, query_inhabitant_relationship
+    lockdown, query_inhabitant_detail, query_inhabitant_relationship, \
+    modify_suspect
 
 
 def to_save() -> None:
@@ -106,6 +107,13 @@ def make_set_lockdown(building_id: int) -> Callable[[], None]:
     return set_lockdown
 
 
+def make_modify_suspect(inhabitant_id: int) -> Callable[[], None]:
+    """Return a function that set/unset given inhabitant in suspect."""
+    def f() -> None:
+        modify_suspect(inhabitant_id)
+    return f
+
+
 def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
     """Create a callback function that is called when a inhabitant row is clicked."""
     def inhabitant_clicked() -> None:
@@ -114,6 +122,7 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
         with dpg.group(tag='inhabitant_detail', parent=right_view):
             with dpg.group(horizontal=True):
                 dpg.add_text('Inhabitant Detail')
+                dpg.add_button(label='Toggle Suspect', callback=make_modify_suspect(inhabitant_id))
                 dpg.add_button(label='Close', callback=close_inhabitant_detail)
 
             keys, values = query_inhabitant_detail(inhabitant_id)
