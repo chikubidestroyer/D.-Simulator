@@ -12,8 +12,8 @@ import dsimulator.generator as gen
 from typing import List, Tuple
 
 con = None
-day = 0
-resig_day = 15
+day = None
+resig_day = None
 
 
 def init_game() -> None:
@@ -27,6 +27,10 @@ def init_game() -> None:
     con = sqlite3.connect(":memory:", check_same_thread=False)
 
     run_script('DDL.sql')
+
+    con.execute('UPDATE STATUS SET day = 0, resignation_day = 15')
+    day = 0
+    resig_day = 15
 
     gen.generate_map(con)
     gen.generate_home(con)
@@ -125,6 +129,8 @@ def list_save() -> List[Tuple[int, str]]:
 def read_save(save_id: int) -> None:
     """Read the saved database into the in-memory database."""
     global con
+    global day
+    global resig_day
 
     # check_same_thread=False is necessary for allowing query by UI handler.
     # I am not sure why the UI is still multithreaded even though I turned on manual callback management.
@@ -134,6 +140,9 @@ def read_save(save_id: int) -> None:
     with save_con:
         save_con.backup(con)
     save_con.close()
+
+    cur = con.execute('SELECT day, resignation_day FROM status')
+    day, resig_day = cur.fetchone()
 
 
 def write_save(save_id: int = None) -> None:
