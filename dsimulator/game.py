@@ -37,7 +37,7 @@ def init_game() -> None:
     gen.init_status(con)
     init_commonality_view()
     init_kill_trigger()
-    create_lockdown_buidling_view()
+    create_lockdown_building_view()
     create_modified_edge_view()
 
 def next_day() -> None:
@@ -213,7 +213,7 @@ def lockdown(building_id: int) -> None:
         WHERE building_id = {0};'''.format(building_id))
 
 
-def create_lockdown_buidling_view() -> None:
+def create_lockdown_building_view() -> None:
     """Create a view of building that only contains building under lockdown."""
     con.execute('''
         CREATE VIEW lockdown_building AS
