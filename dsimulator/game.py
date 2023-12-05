@@ -47,7 +47,21 @@ def next_day() -> None:
     victim = select_victim()
     if victim != None:
         kill_inhabitant(select_victim())
-    
+
+def end_game_condition(examined_inhabitant = None) -> Tuple[bool, bool]:
+    '''Returns whether if game has ended and if the player has won'''
+    global day
+    global resig_day
+    game_end = False
+    game_win = False
+    if day >= resig_day:
+        game_end = True
+    if examined_inhabitant != None:
+        killer_id = con.execute("SELECT killer_id FROM status").fetchone()[0]
+        if examined_inhabitant == killer_id:
+            game_win = True
+    return (game_end, game_win)
+
 def kill_inhabitant(victim):
     global con
     global day
@@ -253,7 +267,7 @@ def modify_suspect(inhabitant_id: int) -> None:
         WHERE inhabitant_id = {0}'''.format(inhabitant_id))
     # not sure about the format of query result
     # will empty query return empty list?
-    if cur.fetchall() == []:
+    if cur.fetchall() == None:
         con.execute('''
             INSERT INTO suspect
             VALUES ({0})'''.format(inhabitant_id))
