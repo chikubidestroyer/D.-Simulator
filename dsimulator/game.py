@@ -46,14 +46,14 @@ def next_day() -> None:
     day += 1
 
     query_shortest_path()
-    print('Queried `dist`')
+    # print('Queried `dist`')
     query_loc_time_inhabitant()
-    print('Queried `loc_time`')
+    # print('Queried `loc_time`')
     victim = select_victim()
-    print('Selected the victim')
+    # print('Selected the victim')
     if victim is not None:
         kill_inhabitant(select_victim())
-    print('Victim killed')
+    # print('Victim killed')
 
 
 def end_game_condition(examined_inhabitant: int = None) -> Tuple[bool, bool]:
@@ -65,8 +65,8 @@ def end_game_condition(examined_inhabitant: int = None) -> Tuple[bool, bool]:
     if day >= resig_day:
         game_end = True
     if examined_inhabitant is not None:
-        killer_id = con.execute("SELECT killer_id FROM status").fetchone()[0]
-        if examined_inhabitant == killer_id:
+        killer_inhabitant_id = con.execute("SELECT killer_inhabitant_id FROM status").fetchone()[0]
+        if examined_inhabitant == killer_inhabitant_id:
             game_win = True
     return (game_end, game_win)
 

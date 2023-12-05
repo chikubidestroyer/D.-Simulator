@@ -64,4 +64,4 @@ dsimulator
 - [x] Provide clear feedback based on player actions and database updates. For example, if a player investigates a location, display relevant information from the database.
 
 ### Game Ending Determination
-- [ ] Implement a mechanism to determine the end of the game, whether by a specific date or through a reputation-based system.
+- [x] Implement a mechanism to determine the end of the game, whether by a specific date or through a reputation-based system.

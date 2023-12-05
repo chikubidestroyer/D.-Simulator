@@ -10,13 +10,26 @@ import dsimulator.ui.save as save
 import dsimulator.game as game
 
 
+def close_details() -> None:
+    """Close the detail views."""
+    close_building_detail()
+    close_inhabitant_detail()
+
+
+def hide_windows() -> None:
+    """Hide the pop-up windows."""
+    dpg.hide_item(victim_window)
+    dpg.hide_item(suspect_window)
+    dpg.hide_item(lose_window)
+    dpg.hide_item(win_window)
+    dpg.hide_item(wrong_window)
+
+
 def to_save() -> None:
     """Hide the game window show the save window."""
     save.update_save_window()
+    hide_windows()
     dpg.hide_item(game_window)
-    dpg.hide_item(victim_window)
-    dpg.hide_item(suspect_window)
-
     dpg.show_item(save.save_window)
     dpg.set_primary_window(save.save_window, True)
 
@@ -24,13 +37,9 @@ def to_save() -> None:
 def to_main() -> None:
     """Hide the game window and go back to main window."""
     game.close_game()
-
-    close_building_detail()
-    close_inhabitant_detail()
+    close_details()
+    hide_windows()
     dpg.hide_item(game_window)
-    dpg.hide_item(victim_window)
-    dpg.hide_item(suspect_window)
-
     dpg.show_item(main.main_window)
     dpg.set_primary_window(main.main_window, True)
 
@@ -119,6 +128,16 @@ def make_set_lockdown(building_id: int) -> Callable[[], None]:
     return set_lockdown
 
 
+def make_accuse(inhabitant_id: int) -> Callable[[], None]:
+    """Return a function that accuses the given inhabitant."""
+    def accuse() -> None:
+        if game.end_game_condition(inhabitant_id)[1]:
+            dpg.show_item(win_window)
+        else:
+            dpg.show_item(wrong_window)
+    return accuse
+
+
 def make_modify_suspect(inhabitant_id: int) -> Callable[[], None]:
     """Return a function that set/unset given inhabitant in suspect."""
     def f() -> None:
@@ -136,6 +155,7 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
             with dpg.group(horizontal=True):
                 dpg.add_text('Inhabitant Detail')
                 dpg.add_button(label='Close', callback=close_inhabitant_detail)
+                dpg.add_button(label='Accuse', callback=make_accuse(inhabitant_id))
                 dpg.add_button(label='Toggle Suspect', callback=make_modify_suspect(inhabitant_id))
 
             keys, values = game.query_inhabitant_detail(inhabitant_id)
@@ -200,19 +220,17 @@ def update_suspect() -> None:
 
 def next_turn() -> None:
     """Execute one turn of the game."""
-    close_building_detail()
-    close_inhabitant_detail()
-    dpg.hide_item(victim_window)
-    dpg.hide_item(suspect_window)
-
     game.next_day()
-
+    hide_windows()
     update_game_window()
 
 
 def update_game_window() -> None:
-    """Update the game map and query result in the game window."""
-    dpg.set_value(day_text, 'Day {}'.format(game.day))
+    """Update the status, game map, and query result in the game window."""
+    dpg.set_value(day_text, 'Current Day {}'.format(game.day))
+    dpg.set_value(resig_text, 'Resignation Day {}'.format(game.resig_day))
+    if game.end_game_condition()[0]:
+        dpg.show_item(lose_window)
 
     dpg.delete_item(game_map, children_only=True)
     scale = 180
@@ -349,6 +367,7 @@ with dpg.window() as game_window:
         dpg.add_spacer()
 
         day_text = dpg.add_text()
+        resig_text = dpg.add_text()
         dpg.add_button(label='Next Turn', callback=next_turn)
     dpg.hide_item(game_window)
 
@@ -356,3 +375,15 @@ victim_window = dpg.add_window(label='Victim', width=MAIN_WIDTH / 2, height=MAIN
 dpg.hide_item(victim_window)
 suspect_window = dpg.add_window(label='Suspect', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
 dpg.hide_item(suspect_window)
+
+with dpg.window(label='You Lose', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2) as lose_window:
+    dpg.add_text('You have resigned after failing to catch the killer on time.')
+dpg.hide_item(lose_window)
+
+with dpg.window(label='You Win', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2) as win_window:
+    dpg.add_text('You have caught the killer.')
+dpg.hide_item(win_window)
+
+with dpg.window(label='Wrong Person', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2) as wrong_window:
+    dpg.add_text('The person accused is not the killer.')
+dpg.hide_item(wrong_window)
