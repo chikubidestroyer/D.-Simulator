@@ -37,8 +37,6 @@ CREATE TEMP TABLE loc_time(
 	              PRIMARY KEY(inhabitant_id, vertex_id, arrive)
 );
 
-DROP TRIGGER IF EXISTS insert_loc_time;
-
 -- Called each time a new location-time decision is made and thus inserted into the table.
 CREATE TEMP TRIGGER insert_loc_time AFTER INSERT ON loc_time
 WHEN

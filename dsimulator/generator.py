@@ -3,7 +3,6 @@
 import sqlite3
 import numpy as np
 import random
-from typing import List
 from faker import Faker
 
 np.random.seed(0)
@@ -26,7 +25,7 @@ def get_free_vertex(con: sqlite3.Connection) -> int:
     return cur.fetchone()[0]
 
 
-def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
+def generate_home(con: sqlite3.Connection, building_per_range: int = 2) -> None:
     """Generate the homes and income ranges given the database connection containing vertices."""
     income_name = ['Low Income Home', 'Medium Income Home', 'High Income Home']
     income = [(1, 30000), (30000, 90000), (90000, None)]  # [1,3000), [3000,90000), [90000,inf) this was the bug from previous meeting
@@ -79,8 +78,8 @@ def generate_workplace(con: sqlite3.Connection, num_occupation: int = 30, num_bu
                         (building_id, occupation_per_building))
 
 
-# Function to generate inhabitants and relationships
-def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=1000):
+def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab: int = 1000) -> None:
+    """Generate inhabitants and relationships."""
     template_inhabitant = "INSERT INTO inhabitant VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?);"
     template_relationship = "INSERT INTO relationship VALUES (?, ?, ?);"
     # Get workplace data
@@ -139,7 +138,7 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
         # Consistent relationships based on common sense
         different_inhabitants = [other for other in inhabitants if other['id'] != inhabitant['id']]
         # Get random relationship type
-        relationship_type = random.choice(["Relative", "Friend", "Enemy", "Colleague"])
+        # relationship_type = random.choice(["Relative", "Friend", "Enemy", "Colleague"])
 
         # Get a related inhabitant based on gender and last name
         related = [
@@ -169,22 +168,6 @@ def generate_inhabitants_and_relationships(con: sqlite3.Connection, num_inhab=10
         for colleague in colleagues:
             with con:
                 con.execute(template_relationship, (inhabitant['id'], colleague['id'], "Colleague"))
-
-
-def generate_test_killer(con: sqlite3.Connection):
-    ''' generate only one killer for testing purposes'''
-
-    con.execute("INSERT INTO killer VALUES(0)")
-    template = "INSERT INTO killer_chara VALUES(0, ?, ?)"
-    con.execute(template, ("rapist", 15))
-    con.execute(template, ("high income", 5))
-    con.execute(template, ("colleague", 10))
-
-
-def init_status(con: sqlite3.Connection):
-    '''initialized to constant for tests'''
-    # resignation day is set to 15 for now
-    con.execute("INSERT INTO status VALUES(0, 1, 15, 0, 999)")
 
 
 def generate_map(con: sqlite3.Connection) -> None:

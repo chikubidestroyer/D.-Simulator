@@ -10,7 +10,6 @@ import sqlite3
 from dsimulator.defs import ROOT_DIR
 import dsimulator.generator as gen
 from typing import List, Tuple
-import math
 
 con = None
 day = 0
@@ -40,33 +39,39 @@ def init_game() -> None:
     create_lockdown_building_view()
     create_modified_edge_view()
 
+
 def next_day() -> None:
+    """End the turn and proceed to the next day."""
     global day
     day += 1
     query_loc_time_inhabitant()
     victim = select_victim()
-    if victim != None:
+    if victim is not None:
         kill_inhabitant(select_victim())
 
-def end_game_condition(examined_inhabitant = None) -> Tuple[bool, bool]:
-    '''Returns whether if game has ended and if the player has won'''
+
+def end_game_condition(examined_inhabitant: int = None) -> Tuple[bool, bool]:
+    """Return whether if game has ended and if the player has won."""
     global day
     global resig_day
     game_end = False
     game_win = False
     if day >= resig_day:
         game_end = True
-    if examined_inhabitant != None:
+    if examined_inhabitant is not None:
         killer_id = con.execute("SELECT killer_id FROM status").fetchone()[0]
         if examined_inhabitant == killer_id:
             game_win = True
     return (game_end, game_win)
 
-def kill_inhabitant(victim):
+
+def kill_inhabitant(victim: int) -> None:
+    """Insert `(victim_id, scene_vertex_id, min_of_death)` into `victim` table."""
     global con
     global day
     with con:
         con.execute("INSERT INTO victim VALUES (?,?,?,?)", (victim[0], day, victim[2], victim[1]))
+
 
 def close_game() -> None:
     """Close the connection to game state database."""
@@ -236,17 +241,19 @@ def create_lockdown_building_view() -> None:
             WHERE lockdown = 1;
                 ''')
 
+
 def create_modified_edge_view() -> None:
-    """create edge adjusted for lockdown buildings"""
+    """Create edge adjusted for lockdown buildings."""
     con.execute('''
                 CREATE VIEW modified_edge AS
                     SELECT *
                     FROM edge
-                    WHERE NOT EXISTS (SELECT * 
-                        FROM lockdown_building 
+                    WHERE NOT EXISTS (SELECT *
+                        FROM lockdown_building
                         WHERE `start` = building_id OR `end` = building_id
                     )
                 ''')
+
 
 def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
     """Return the list of inhabitants having relations with subject."""
@@ -267,7 +274,7 @@ def modify_suspect(inhabitant_id: int) -> None:
         WHERE inhabitant_id = {0}'''.format(inhabitant_id))
     # not sure about the format of query result
     # will empty query return empty list?
-    if cur.fetchall() == None:
+    if cur.fetchall() is None:
         con.execute('''
             INSERT INTO suspect
             VALUES ({0})'''.format(inhabitant_id))
@@ -298,10 +305,13 @@ def query_loc_time() -> None:
 
 
 def init_commonality_view() -> None:
+    """Initialize the view for victims' common attributes."""
     with con:
         run_script('victim_common_attribute.sql')
-        
+
+
 def init_kill_trigger() -> None:
+    """Add the trigger to kill the inhabitant after insertion on `victim`."""
     with con:
         run_script('kill_trigger.sql')
 
@@ -315,7 +325,7 @@ def query_loc_time_inhabitant() -> None:
     # Currently, the inhabitant may leave home after 7:00 (420 mins)
     # and must return home before 19:00 (1140 mins).
     # Also only those with a workplace is considered.
-    
+
     # adjusted to remove dead inhabitant from query
     with con:
         con.execute('''INSERT INTO src_dst (inhabitant_id, src, dst, t_src, t_dst)
@@ -338,55 +348,55 @@ def query_loc_time_inhabitant() -> None:
 
 
 def run_script(file_name: str) -> None:
+    """Execute the script file given the file name."""
     with open(os.path.join(ROOT_DIR, file_name)) as fd:
         script = fd.read()
     with con:
         con.executescript(script)
 
 
-def query_inhabitant(income_lo=None, income_hi=None, occupation=None, gender=None, dead=None, home_building_id=None, home_building_name=None, workplace_building_id=None, workplace_building_name=None, custody=None, suspect=None):
-    """Query inhabitant given the user-specified predicate.
-    """
+def query_inhabitant(income_lo: int = None, income_hi: int = None, occupation: str = None, gender: str = None, dead: bool = None, home_building_id: int = None, home_building_name: str = None, workplace_building_id: int = None, workplace_building_name: str = None, custody: bool = None, suspect: bool = None) -> Tuple[Tuple[str, ...], Tuple]:
+    """Query inhabitant given the user-specified predicate."""
     global con
     required_tables = ""
     required_predicate = ""
-    if income_lo != None or income_hi != None \
-            or occupation != None \
-            or workplace_building_id != None or workplace_building_name != None:
+    if income_lo is not None or income_hi is not None \
+            or occupation is not None \
+            or workplace_building_id is not None or workplace_building_name is not None:
         required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation JOIN building AS w ON workplace_building_id = w.building_id"
 
-        if income_lo != None:
+        if income_lo is not None:
             required_predicate = required_predicate + " AND income >= " + str(income_lo)
-        if income_hi != None:
+        if income_hi is not None:
             required_predicate = required_predicate + " AND income <= " + str(income_hi)
 
-        if occupation != None:
+        if occupation is not None:
             required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
 
-    if gender != None:
+    if gender is not None:
         required_predicate = required_predicate + " AND gender = '{0}'".format(gender)
 
-    if dead == False:
+    if dead is False:
         required_predicate = required_predicate + " AND dead = 0"
-    elif dead == True:
+    elif dead is True:
         required_predicate = required_predicate + " AND dead = 1"
-    if custody == False:
+    if custody is False:
         required_predicate = required_predicate + " AND custody = 0"
-    elif custody == True:
+    elif custody is True:
         required_predicate = required_predicate + " AND custody = 0"
 
-    if home_building_id != None:
+    if home_building_id is not None:
         required_predicate = required_predicate + " AND h.building_id = {0}".format(home_building_id)
-    if home_building_name != None:
+    if home_building_name is not None:
         required_predicate = required_predicate + " AND h.building_name = '{0}'".format(home_building_name)
-    if workplace_building_id != None:
+    if workplace_building_id is not None:
         required_predicate = required_predicate + " AND w.building_id = {0}".format(workplace_building_id)
-    if workplace_building_name != None:
+    if workplace_building_name is not None:
         required_predicate = required_predicate + " AND w.building_name = '{0}'".format(workplace_building_name)
 
-    if suspect == True:
+    if suspect is True:
         required_predicate = required_predicate + " AND EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
-    elif suspect == False:
+    elif suspect is False:
         required_predicate = required_predicate + " AND NOT EXISTS(SELECT * FROM suspect WHERE suspect.inhabitant_id = inhabitant.inhabitant_id)"
 
     query = """ SELECT inhabitant_id, first_name, last_name, h.building_name, workplace_id, custody, dead, gender
@@ -401,6 +411,7 @@ def query_inhabitant(income_lo=None, income_hi=None, occupation=None, gender=Non
 
 
 def query_inhabitant_detail(inhabitant_id: int) -> Tuple[Tuple[str, ...], Tuple]:
+    """Return the details for a given inhabitant."""
     cur = con.execute('''SELECT inhabitant_id, first_name, last_name,
                                 custody, dead, gender,
                                 h.building_name, h.lockdown,
@@ -428,13 +439,12 @@ def query_inhabitant_detail(inhabitant_id: int) -> Tuple[Tuple[str, ...], Tuple]
         cur.fetchone()
 
 
-def query_via_point_constraint(start: int, end: int, mins: int):
+def query_via_point_constraint(start: int, end: int, mins: int) -> List[Tuple[int]]:
     """
     List all the vertices v where the path start -> v -> end is not longer than mins.
 
     query_shortest_path() must be run before calling this function.
     """
-
     cur = con.execute('''SELECT a.dst
                            FROM dist AS a
                                 JOIN dist AS b
@@ -448,7 +458,7 @@ def query_via_point_constraint(start: int, end: int, mins: int):
 # TODO: Test this with inhabitant data.
 
 
-def query_witness_count(vertex_id: int):
+def query_witness_count(vertex_id: int) -> List[Tuple[str, str, int]]:
     """
     List the name and the number of times that each inhabitant has been seen in a vertex.
 
@@ -470,15 +480,14 @@ def query_witness_count(vertex_id: int):
     return cur
 
 
-def query_victim_commonality():
-    '''
-    List the common attributes among victims
-    '''
+def query_victim_commonality() -> List[Tuple]:
+    """List the common attributes among victims."""
     cur = con.execute("SELECT * FROM commonality")
     return cur.fetchall()
 
 
-def select_victim():
+def select_victim() -> Tuple:
+    """Select a single victim."""
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
     con.executescript(script)

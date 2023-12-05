@@ -38,6 +38,7 @@ def to_main() -> None:
 
 
 def draw_inhabitants_table(data: Tuple[Tuple[str, ...], List[Tuple]]) -> None:
+    """Draw a table about inhabitants given the name of the attributes and the tuples of inhabitants."""
     inhabitant_columns, inhabitant_rows = data
 
     with dpg.table(policy=dpg.mvTable_SizingStretchProp):
@@ -234,9 +235,9 @@ def update_game_window() -> None:
 
         dx = e[0] - s[0]
         dy = e[1] - s[1]
-        l = math.sqrt(dx**2 + dy**2)
-        shift_x = -shift * dy / l
-        shift_y = shift * dx / l
+        length = math.sqrt(dx**2 + dy**2)
+        shift_x = -shift * dy / length
+        shift_y = shift * dx / length
 
         dpg.draw_line(s, e, thickness=4, color=(255, 255, 255, 255), parent=game_map)
         dpg.draw_text(((s[0] / 3 + 2 * e[0] / 3) - font_size / 2 + shift_x, (s[1] / 3 + 2 * e[1] / 3) - font_size / 2 + shift_y),
@@ -254,15 +255,15 @@ def update_game_window() -> None:
         gender = dpg.get_value(gender_input)
         gender = gender if len(gender) > 0 else None
         dead = dpg.get_value(dead_input)
-        dead = int(dead) if len(dead) > 0 else None
+        dead = (int(dead) == 1) if len(dead) > 0 else None
         home_building_name = dpg.get_value(home_building_name_input)
         home_building_name = home_building_name if len(home_building_name) > 0 else None
         workplace_building_name = dpg.get_value(workplace_building_name_input)
         workplace_building_name = workplace_building_name if len(workplace_building_name) > 0 else None
         custody = dpg.get_value(custody_input)
-        custody = int(custody) if len(custody) > 0 else None
+        custody = (int(custody) == 1) if len(custody) > 0 else None
         suspect = dpg.get_value(suspect_input)
-        suspect = int(suspect) if len(suspect) > 0 else None
+        suspect = (int(suspect) == 1) if len(suspect) > 0 else None
 
         inhabitant_columns, inhabitant_rows = query_inhabitant(
             income_lo=income_lo, income_hi=income_hi, occupation=occupation,
@@ -282,7 +283,7 @@ def update_game_window() -> None:
         dpg.add_table_column(parent=query_table)
 
         for r in inhabitant_rows:
-            with dpg.table_row(parent=query_table) as row:
+            with dpg.table_row(parent=query_table):
                 for c in r:
                     dpg.add_text(c)
                 dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))

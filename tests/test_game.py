@@ -1,3 +1,5 @@
+"""Run some tests on the game module."""
+
 import dsimulator.game as game
 
 game.init_game()
