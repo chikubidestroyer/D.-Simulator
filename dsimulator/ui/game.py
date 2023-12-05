@@ -117,8 +117,8 @@ def make_modify_suspect(inhabitant_id: int) -> Callable[[], None]:
 def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
     """Create a callback function that is called when a inhabitant row is clicked."""
     def inhabitant_clicked() -> None:
-        dpg.hide_item(query_view)
         close_inhabitant_detail()
+        dpg.hide_item(query_view)
         with dpg.group(tag='inhabitant_detail', parent=right_view):
             with dpg.group(horizontal=True):
                 dpg.add_text('Inhabitant Detail')
