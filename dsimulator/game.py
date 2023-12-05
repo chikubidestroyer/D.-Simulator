@@ -344,23 +344,24 @@ def run_script(file_name: str) -> None:
         con.executescript(script)
 
 
-def query_inhabitant(income_lo=0, income_hi=math.inf, occupation=None, gender=None, dead=None, home_building_id=None, home_building_name=None, workplace_building_id=None, workplace_building_name=None, custody=None, suspect=None):
+def query_inhabitant(income_lo=None, income_hi=None, occupation=None, gender=None, dead=None, home_building_id=None, home_building_name=None, workplace_building_id=None, workplace_building_name=None, custody=None, suspect=None):
     """Query inhabitant given the user-specified predicate.
     """
     global con
     required_tables = ""
     required_predicate = ""
-    if income_lo != 0 or income_hi != math.inf \
+    if income_lo != None or income_hi != None \
             or occupation != None \
             or workplace_building_id != None or workplace_building_name != None:
         required_tables = "NATURAL JOIN workplace NATURAL JOIN occupation JOIN building AS w ON workplace_building_id = w.building_id"
-        if income_hi != math.inf:
-            required_predicate = required_predicate + " AND income >= " + str(income_lo) + " AND income <= " + str(income_hi)
-        else:
-            required_predicate = required_predicate + " AND income >= " + str(income_lo)
 
-            if occupation != None:
-                required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
+        if income_lo != None:
+            required_predicate = required_predicate + " AND income >= " + str(income_lo)
+        if income_hi != None:
+            required_predicate = required_predicate + " AND income <= " + str(income_hi)
+
+        if occupation != None:
+            required_predicate = required_predicate + " AND occupation_name = '{0}'".format(occupation)
 
     if gender != None:
         required_predicate = required_predicate + " AND gender = '{0}'".format(gender)

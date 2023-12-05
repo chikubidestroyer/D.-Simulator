@@ -1,6 +1,7 @@
 """The user interface for the game window where the game is running in."""
 
 from typing import List, Tuple, Callable
+import sqlite3
 import math
 from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import dearpygui.dearpygui as dpg
@@ -135,8 +136,8 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
         with dpg.group(tag='inhabitant_detail', parent=right_view):
             with dpg.group(horizontal=True):
                 dpg.add_text('Inhabitant Detail')
-                dpg.add_button(label='Toggle Suspect', callback=make_modify_suspect(inhabitant_id))
                 dpg.add_button(label='Close', callback=close_inhabitant_detail)
+                dpg.add_button(label='Toggle Suspect', callback=make_modify_suspect(inhabitant_id))
 
             keys, values = query_inhabitant_detail(inhabitant_id)
             with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
@@ -205,32 +206,6 @@ def next_turn() -> None:
     update_victim()
 
 
-with dpg.window() as game_window:
-    with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
-        with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
-            with dpg.group() as map_view:
-                dpg.add_text('Map')
-                game_map = dpg.add_drawlist(width=1500, height=1500)
-
-        with dpg.child_window() as right_view:
-            with dpg.group() as query_view:
-                dpg.add_text('Query Result')
-                query_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
-
-    with dpg.group(horizontal=True):
-        dpg.add_button(label='Save Game', callback=to_save)
-        dpg.add_button(label='Quit to Main Menu', callback=to_main)
-        dpg.add_button(label='Victim', callback=show_victim)
-        dpg.add_button(label='Suspect', callback=show_suspect)
-        dpg.add_button(label='Next Turn', callback=next_turn)
-    dpg.hide_item(game_window)
-
-victim_window = dpg.add_window(label='Victim', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
-dpg.hide_item(victim_window)
-suspect_window = dpg.add_window(label='Suspect', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
-dpg.hide_item(suspect_window)
-
-
 def update_game_window() -> None:
     """Update the game map and query result in the game window."""
     dpg.delete_item(game_map, children_only=True)
@@ -259,22 +234,111 @@ def update_game_window() -> None:
 
         dx = e[0] - s[0]
         dy = e[1] - s[1]
-        len = math.sqrt(dx**2 + dy**2)
-        shift_x = -shift * dy / len
-        shift_y = shift * dx / len
+        l = math.sqrt(dx**2 + dy**2)
+        shift_x = -shift * dy / l
+        shift_y = shift * dx / l
 
         dpg.draw_line(s, e, thickness=4, color=(255, 255, 255, 255), parent=game_map)
         dpg.draw_text(((s[0] / 3 + 2 * e[0] / 3) - font_size / 2 + shift_x, (s[1] / 3 + 2 * e[1] / 3) - font_size / 2 + shift_y),
                       str(c), size=font_size, parent=game_map)
 
     dpg.delete_item(query_table, children_only=True)
-    inhabitant_columns, inhabitant_rows = query_inhabitant()
-    for c in inhabitant_columns:
-        dpg.add_table_column(label=c, parent=query_table)
-    dpg.add_table_column(parent=query_table)
 
-    for r in inhabitant_rows:
-        with dpg.table_row(parent=query_table) as row:
-            for c in r:
-                dpg.add_text(c)
-            dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
+    try:
+        income_lo = dpg.get_value(income_lo_input)
+        income_lo = int(income_lo) if len(income_lo) > 0 else None
+        income_hi = dpg.get_value(income_hi_input)
+        income_hi = int(income_hi) if len(income_hi) > 0 else None
+        occupation = dpg.get_value(occupation_input)
+        occupation = occupation if len(occupation) > 0 else None
+        gender = dpg.get_value(gender_input)
+        gender = gender if len(gender) > 0 else None
+        dead = dpg.get_value(dead_input)
+        dead = int(dead) if len(dead) > 0 else None
+        home_building_name = dpg.get_value(home_building_name_input)
+        home_building_name = home_building_name if len(home_building_name) > 0 else None
+        workplace_building_name = dpg.get_value(workplace_building_name_input)
+        workplace_building_name = workplace_building_name if len(workplace_building_name) > 0 else None
+        custody = dpg.get_value(custody_input)
+        custody = int(custody) if len(custody) > 0 else None
+        suspect = dpg.get_value(suspect_input)
+        suspect = int(suspect) if len(suspect) > 0 else None
+
+        inhabitant_columns, inhabitant_rows = query_inhabitant(
+            income_lo=income_lo, income_hi=income_hi, occupation=occupation,
+            gender=gender, dead=dead,
+            home_building_name=home_building_name, workplace_building_name=workplace_building_name,
+            custody=custody, suspect=suspect)
+
+    except ValueError:
+        dpg.add_table_column(label='Input Error', parent=query_table)
+
+    except sqlite3.OperationalError:
+        dpg.add_table_column(label='Query Error', parent=query_table)
+
+    else:
+        for c in inhabitant_columns:
+            dpg.add_table_column(label=c, parent=query_table)
+        dpg.add_table_column(parent=query_table)
+
+        for r in inhabitant_rows:
+            with dpg.table_row(parent=query_table) as row:
+                for c in r:
+                    dpg.add_text(c)
+                dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
+
+
+with dpg.window() as game_window:
+    with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
+        with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
+            with dpg.group() as map_view:
+                dpg.add_text('Map')
+                game_map = dpg.add_drawlist(width=1500, height=1500)
+
+        with dpg.child_window() as right_view:
+            with dpg.group() as query_view:
+                dpg.add_text('Query Result')
+
+                with dpg.group(horizontal=True):
+                    dpg.add_text('income_lo: ')
+                    income_lo_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('income_hi: ')
+                    income_hi_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('occupation: ')
+                    occupation_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('gender: ')
+                    gender_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('dead: ')
+                    dead_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('home_building_name: ')
+                    home_building_name_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('workplace_building_name: ')
+                    workplace_building_name_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('custody: ')
+                    custody_input = dpg.add_input_text()
+                with dpg.group(horizontal=True):
+                    dpg.add_text('suspect: ')
+                    suspect_input = dpg.add_input_text()
+
+                dpg.add_button(label='Search', callback=update_game_window)
+                query_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
+
+    with dpg.group(horizontal=True):
+        dpg.add_button(label='Save Game', callback=to_save)
+        dpg.add_button(label='Quit to Main Menu', callback=to_main)
+        dpg.add_button(label='Victim', callback=show_victim)
+        dpg.add_button(label='Suspect', callback=show_suspect)
+        dpg.add_button(label='Next Turn', callback=next_turn)
+    dpg.hide_item(game_window)
+
+victim_window = dpg.add_window(label='Victim', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
+dpg.hide_item(victim_window)
+suspect_window = dpg.add_window(label='Suspect', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
+dpg.hide_item(suspect_window)
