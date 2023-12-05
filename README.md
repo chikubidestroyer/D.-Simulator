@@ -36,12 +36,12 @@ dsimulator
 
 ### User Interface Design
 - [x] Develop a visual user interface to represent vertex and edge tables, displaying their positions and connections. This could be a city map where each vertex represents a point of interest, and edges represent paths between them.
-- [ ] Display character and building information, showcasing details from the building, home, occupation, workplace, and inhabitant tables. This may include character profiles, homes, workplaces, etc.
-- [ ] Implement a system to show relationships between characters (relationship table) and track investigation status (status table) such as suspects, victims, and key events.
+- [x] Display character and building information, showcasing details from the building, home, occupation, workplace, and inhabitant tables. This may include character profiles, homes, workplaces, etc.
+- [x] Implement a system to show relationships between characters (relationship table) and track investigation status (status table) such as suspects, victims, and key events.
 
 ### Database Setup
 - [x] Create an SQLite database using the provided schema, ensuring all constraints and relationships are correctly implemented.
-- [ ] Populate tables with initial data. Ensure diversity in characters, locations, and scenes for realism. Approximately 1000 records need to be populated (generate families, assign occupations, incomes, and addresses).
+- [x] Populate tables with initial data. Ensure diversity in characters, locations, and scenes for realism. Approximately 1000 records need to be populated (generate families, assign occupations, incomes, and addresses).
 
 ### Game Logic
 - [x] Implement the killer's behavior algorithm based on the killer and killer_chara tables.
@@ -55,13 +55,13 @@ dsimulator
 
 ### SQLite Database Interaction
 - [x] Implement functions to query the SQLite database to retrieve information about locations, characters, and events as needed.
-- [ ] Develop a mechanism to update the database based on player actions, including marking suspects, updating character statuses, or recording investigation progress.
+- [x] Develop a mechanism to update the database based on player actions, including marking suspects, updating character statuses, or recording investigation progress.
 - [x] Count the number of times each person was witnessed at a certain vertex.
 - [x] List all possible via points given the start and end vertices and the time constraint.
 - [x] List the inhabitants related to the victim.
 
 ### Player Feedback and Interaction
-- [ ] Provide clear feedback based on player actions and database updates. For example, if a player investigates a location, display relevant information from the database.
+- [x] Provide clear feedback based on player actions and database updates. For example, if a player investigates a location, display relevant information from the database.
 
 ### Game Ending Determination
 - [ ] Implement a mechanism to determine the end of the game, whether by a specific date or through a reputation-based system.

@@ -7,10 +7,7 @@ from dsimulator.defs import MAIN_WIDTH, MAIN_HEIGHT
 import dearpygui.dearpygui as dpg
 import dsimulator.ui.main as main
 import dsimulator.ui.save as save
-from dsimulator.game import close_game, query_inhabitant, list_vertex, list_edge, \
-    list_building, query_building_summary, query_home_income, query_workplace_occupation, \
-    lockdown, query_inhabitant_detail, query_inhabitant_relationship, \
-    modify_suspect
+import dsimulator.game as game
 
 
 def to_save() -> None:
@@ -26,14 +23,15 @@ def to_save() -> None:
 
 def to_main() -> None:
     """Hide the game window and go back to main window."""
-    close_game()
+    game.close_game()
+
+    close_building_detail()
+    close_inhabitant_detail()
     dpg.hide_item(game_window)
     dpg.hide_item(victim_window)
     dpg.hide_item(suspect_window)
 
     dpg.show_item(main.main_window)
-    close_building_detail()
-    close_inhabitant_detail()
     dpg.set_primary_window(main.main_window, True)
 
 
@@ -67,7 +65,7 @@ def show_building_detail(building_id: int) -> None:
     """Replace the game map with a view of building detail."""
     dpg.hide_item(map_view)
 
-    building_name, lockdown, home = query_building_summary(building_id)
+    building_name, lockdown, home = game.query_building_summary(building_id)
     with dpg.group(tag='building_detail', parent=left_view):
         with dpg.group(horizontal=True):
             dpg.add_text(building_name)
@@ -78,17 +76,17 @@ def show_building_detail(building_id: int) -> None:
                      + ('under lockdown' if lockdown == 1 else 'not under lockdown'))
 
         if home == 1:
-            low, high = query_home_income(building_id)
+            low, high = game.query_home_income(building_id)
             if high is None:
                 dpg.add_text('Income equal or greater than {}'.format(low))
             else:
                 dpg.add_text('Income between {} and {}'.format(low, high))
 
-            inhabitant_data = query_inhabitant(home_building_id=building_id)
+            inhabitant_data = game.query_inhabitant(home_building_id=building_id)
         else:
             dpg.add_separator()
             dpg.add_text('Occupations')
-            occupation_columns, occupation_rows = query_workplace_occupation(building_id)
+            occupation_columns, occupation_rows = game.query_workplace_occupation(building_id)
             with dpg.table(policy=dpg.mvTable_SizingStretchProp):
                 for c in occupation_columns:
                     dpg.add_table_column(label=c)
@@ -97,7 +95,7 @@ def show_building_detail(building_id: int) -> None:
                         for c in r:
                             dpg.add_text(c)
 
-            inhabitant_data = query_inhabitant(workplace_building_id=building_id)
+            inhabitant_data = game.query_inhabitant(workplace_building_id=building_id)
 
         dpg.add_separator()
         dpg.add_text('Inhabitants')
@@ -114,7 +112,7 @@ def close_building_detail() -> None:
 def make_set_lockdown(building_id: int) -> Callable[[], None]:
     """Return a function that sets a building to lockdown."""
     def set_lockdown() -> None:
-        lockdown(building_id)
+        game.lockdown(building_id)
         close_building_detail()
         update_game_window()
         show_building_detail(building_id)
@@ -124,7 +122,7 @@ def make_set_lockdown(building_id: int) -> Callable[[], None]:
 def make_modify_suspect(inhabitant_id: int) -> Callable[[], None]:
     """Return a function that set/unset given inhabitant in suspect."""
     def f() -> None:
-        modify_suspect(inhabitant_id)
+        game.modify_suspect(inhabitant_id)
         update_suspect()
     return f
 
@@ -140,7 +138,7 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
                 dpg.add_button(label='Close', callback=close_inhabitant_detail)
                 dpg.add_button(label='Toggle Suspect', callback=make_modify_suspect(inhabitant_id))
 
-            keys, values = query_inhabitant_detail(inhabitant_id)
+            keys, values = game.query_inhabitant_detail(inhabitant_id)
             with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
                 dpg.add_table_column()
                 dpg.add_table_column()
@@ -153,7 +151,7 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
             dpg.add_separator()
             dpg.add_text('Relationships')
 
-            relationship_rows = query_inhabitant_relationship(inhabitant_id)
+            relationship_rows = game.query_inhabitant_relationship(inhabitant_id)
             with dpg.table(policy=dpg.mvTable_SizingStretchProp):
                 dpg.add_table_column(label='object_first_name')
                 dpg.add_table_column(label='object_last_name')
@@ -184,7 +182,7 @@ def update_victim() -> None:
     """Update the victim window."""
     dpg.delete_item(victim_window, children_only=True)
     with dpg.group(parent=victim_window):
-        draw_inhabitants_table(query_inhabitant(dead=1))
+        draw_inhabitants_table(game.query_inhabitant(dead=True))
 
 
 def show_suspect() -> None:
@@ -197,27 +195,34 @@ def update_suspect() -> None:
     """Update the suspect window."""
     dpg.delete_item(suspect_window, children_only=True)
     with dpg.group(parent=suspect_window):
-        draw_inhabitants_table(query_inhabitant(suspect=1))
-
-# TODO: Connect with a game function that calculates one turn.
+        draw_inhabitants_table(game.query_inhabitant(suspect=True))
 
 
 def next_turn() -> None:
     """Execute one turn of the game."""
-    update_victim()
+    close_building_detail()
+    close_inhabitant_detail()
+    dpg.hide_item(victim_window)
+    dpg.hide_item(suspect_window)
+
+    game.next_day()
+
+    update_game_window()
 
 
 def update_game_window() -> None:
     """Update the game map and query result in the game window."""
+    dpg.set_value(day_text, 'Day {}'.format(game.day))
+
     dpg.delete_item(game_map, children_only=True)
     scale = 140
     offset = 1
-    for x, y in list_vertex():
+    for x, y in game.list_vertex():
         dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 10, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
 
     buildings = []
     b_size = 20
-    for x, y, building_id in list_building():
+    for x, y, building_id in game.list_building():
         xd = (x + offset) * scale
         yd = (y + offset) * scale
         dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
@@ -229,7 +234,7 @@ def update_game_window() -> None:
 
     font_size = 20
     shift = 12
-    for sx, sy, ex, ey, c in list_edge():
+    for sx, sy, ex, ey, c in game.list_edge():
         s = ((sx + offset) * scale, (sy + offset) * scale)
         e = ((ex + offset) * scale, (ey + offset) * scale)
 
@@ -265,7 +270,7 @@ def update_game_window() -> None:
         suspect = dpg.get_value(suspect_input)
         suspect = (int(suspect) == 1) if len(suspect) > 0 else None
 
-        inhabitant_columns, inhabitant_rows = query_inhabitant(
+        inhabitant_columns, inhabitant_rows = game.query_inhabitant(
             income_lo=income_lo, income_hi=income_hi, occupation=occupation,
             gender=gender, dead=dead,
             home_building_name=home_building_name, workplace_building_name=workplace_building_name,
@@ -334,8 +339,15 @@ with dpg.window() as game_window:
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save Game', callback=to_save)
         dpg.add_button(label='Quit to Main Menu', callback=to_main)
+
+        dpg.add_spacer()
+
         dpg.add_button(label='Victim', callback=show_victim)
         dpg.add_button(label='Suspect', callback=show_suspect)
+
+        dpg.add_spacer()
+
+        day_text = dpg.add_text()
         dpg.add_button(label='Next Turn', callback=next_turn)
     dpg.hide_item(game_window)
 

@@ -44,10 +44,16 @@ def next_day() -> None:
     """End the turn and proceed to the next day."""
     global day
     day += 1
+
+    query_shortest_path()
+    print('Queried `dist`')
     query_loc_time_inhabitant()
+    print('Queried `loc_time`')
     victim = select_victim()
+    print('Selected the victim')
     if victim is not None:
         kill_inhabitant(select_victim())
+    print('Victim killed')
 
 
 def end_game_condition(examined_inhabitant: int = None) -> Tuple[bool, bool]:
@@ -317,9 +323,11 @@ def init_kill_trigger() -> None:
 
 
 def query_loc_time_inhabitant() -> None:
-    """Insert the location-time tuples of all inhabitants into `loc_time`."""
-    query_shortest_path()
+    """
+    Insert the location-time tuples of all inhabitants into `loc_time`.
 
+    query_shortest_path() must be run before calling this function.
+    """
     init_loc_time()
 
     # Currently, the inhabitant may leave home after 7:00 (420 mins)
@@ -491,6 +499,7 @@ def select_victim() -> Tuple:
     with open(os.path.join(ROOT_DIR, "kill_sequence.sql")) as fd:
         script = fd.read()
     con.executescript(script)
+
     # The following query outputs one tuple containing information of the selected victim:
     # inhabitant_id, scene_vertex_id, min_of_death, weighted_sum (killer characteristics fulfilled)
     cur = con.execute('''
@@ -501,6 +510,7 @@ def select_victim() -> Tuple:
         WHERE sub.inhabitant_id = pot_victim.inhabitant_id AND
                 sub.vertex_id = pot_victim.vertex_id AND
                 ABS(RANDOM())%(end_min-start_min) + start_min IS NOT NULL
-        ORDER BY weight_sum DESC;
+        ORDER BY weight_sum DESC
+        LIMIT 1;
     ''')
     return cur.fetchone()

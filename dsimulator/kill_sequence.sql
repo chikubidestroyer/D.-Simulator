@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS weighed_pot_victim;
 CREATE TEMP TABLE weighed_pot_victim (
   inhabitant_id INTEGER,
   description TEXT,
-  chara_weight INTEGER, 
+  chara_weight INTEGER,
   vertex_id INTEGER
 );
 
@@ -32,7 +32,7 @@ WITH killer_info AS (
   	WHERE status.killer_inhabitant_id = inhabitant.inhabitant_id
 )
 SELECT DISTINCT inhabitant_id, chara_description, chara_weight, vertex_id
-FROM pot_victim NATURAL JOIN inhabitant AS i NATURAL JOIN home AS h NATURAL JOIN workplace, 
+FROM pot_victim NATURAL JOIN inhabitant AS i NATURAL JOIN home AS h NATURAL JOIN workplace,
 	killer_chara AS k, status
 WHERE status.killer_id = k.killer_id AND
 	CASE
