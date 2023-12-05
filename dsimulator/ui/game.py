@@ -16,6 +16,9 @@ def to_save() -> None:
     """Hide the game window show the save window."""
     save.update_save_window()
     dpg.hide_item(game_window)
+    dpg.hide_item(victim_window)
+    dpg.hide_item(suspect_window)
+
     dpg.show_item(save.save_window)
     dpg.set_primary_window(save.save_window, True)
 
@@ -24,10 +27,28 @@ def to_main() -> None:
     """Hide the game window and go back to main window."""
     close_game()
     dpg.hide_item(game_window)
+    dpg.hide_item(victim_window)
+    dpg.hide_item(suspect_window)
+
     dpg.show_item(main.main_window)
     close_building_detail()
     close_inhabitant_detail()
     dpg.set_primary_window(main.main_window, True)
+
+
+def draw_inhabitants_table(data: Tuple[Tuple[str, ...], List[Tuple]]) -> None:
+    inhabitant_columns, inhabitant_rows = data
+
+    with dpg.table(policy=dpg.mvTable_SizingStretchProp):
+        for c in inhabitant_columns:
+            dpg.add_table_column(label=c)
+        dpg.add_table_column()
+
+        for r in inhabitant_rows:
+            with dpg.table_row():
+                for c in r:
+                    dpg.add_text(c)
+                dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
 
 
 def make_building_clicked(buildings: List[Tuple[int, int, int]], b_size: int) -> Callable[[], None]:
@@ -61,7 +82,7 @@ def show_building_detail(building_id: int) -> None:
             else:
                 dpg.add_text('Income between {} and {}'.format(low, high))
 
-            inhabitant_columns, inhabitant_rows = query_inhabitant(home_building_id=building_id)
+            inhabitant_data = query_inhabitant(home_building_id=building_id)
         else:
             dpg.add_separator()
             dpg.add_text('Occupations')
@@ -74,20 +95,11 @@ def show_building_detail(building_id: int) -> None:
                         for c in r:
                             dpg.add_text(c)
 
-            inhabitant_columns, inhabitant_rows = query_inhabitant(workplace_building_id=building_id)
+            inhabitant_data = query_inhabitant(workplace_building_id=building_id)
 
         dpg.add_separator()
         dpg.add_text('Inhabitants')
-        with dpg.table(policy=dpg.mvTable_SizingStretchProp):
-            for c in inhabitant_columns:
-                dpg.add_table_column(label=c)
-            dpg.add_table_column()
-
-            for r in inhabitant_rows:
-                with dpg.table_row():
-                    for c in r:
-                        dpg.add_text(c)
-                    dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
+        draw_inhabitants_table(inhabitant_data)
 
 
 def close_building_detail() -> None:
@@ -111,6 +123,7 @@ def make_modify_suspect(inhabitant_id: int) -> Callable[[], None]:
     """Return a function that set/unset given inhabitant in suspect."""
     def f() -> None:
         modify_suspect(inhabitant_id)
+        update_suspect()
     return f
 
 
@@ -159,6 +172,39 @@ def close_inhabitant_detail() -> None:
         dpg.show_item(query_view)
 
 
+def show_victim() -> None:
+    """Show all the victims in a window."""
+    update_victim()
+    dpg.show_item(victim_window)
+
+
+def update_victim() -> None:
+    """Update the victim window."""
+    dpg.delete_item(victim_window, children_only=True)
+    with dpg.group(parent=victim_window):
+        draw_inhabitants_table(query_inhabitant(dead=1))
+
+
+def show_suspect() -> None:
+    """Show all the victims in a window."""
+    update_suspect()
+    dpg.show_item(suspect_window)
+
+
+def update_suspect() -> None:
+    """Update the suspect window."""
+    dpg.delete_item(suspect_window, children_only=True)
+    with dpg.group(parent=suspect_window):
+        draw_inhabitants_table(query_inhabitant(suspect=1))
+
+# TODO: Connect with a game function that calculates one turn.
+
+
+def next_turn() -> None:
+    """Execute one turn of the game."""
+    update_victim()
+
+
 with dpg.window() as game_window:
     with dpg.group(height=0.93 * MAIN_HEIGHT, horizontal=True):
         with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
@@ -174,7 +220,15 @@ with dpg.window() as game_window:
     with dpg.group(horizontal=True):
         dpg.add_button(label='Save Game', callback=to_save)
         dpg.add_button(label='Quit to Main Menu', callback=to_main)
+        dpg.add_button(label='Victim', callback=show_victim)
+        dpg.add_button(label='Suspect', callback=show_suspect)
+        dpg.add_button(label='Next Turn', callback=next_turn)
     dpg.hide_item(game_window)
+
+victim_window = dpg.add_window(label='Victim', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
+dpg.hide_item(victim_window)
+suspect_window = dpg.add_window(label='Suspect', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
+dpg.hide_item(suspect_window)
 
 
 def update_game_window() -> None:
