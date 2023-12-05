@@ -215,22 +215,10 @@ def update_game_window() -> None:
     dpg.set_value(day_text, 'Day {}'.format(game.day))
 
     dpg.delete_item(game_map, children_only=True)
-    scale = 140
+    scale = 180
     offset = 1
     for x, y in game.list_vertex():
         dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 10, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
-
-    buildings = []
-    b_size = 20
-    for x, y, building_id in game.list_building():
-        xd = (x + offset) * scale
-        yd = (y + offset) * scale
-        dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
-        buildings.append((xd, yd, building_id))
-
-    with dpg.item_handler_registry() as map_handler:
-        dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
-    dpg.bind_item_handler_registry(game_map, map_handler)
 
     font_size = 20
     shift = 12
@@ -247,6 +235,19 @@ def update_game_window() -> None:
         dpg.draw_line(s, e, thickness=4, color=(255, 255, 255, 255), parent=game_map)
         dpg.draw_text(((s[0] / 3 + 2 * e[0] / 3) - font_size / 2 + shift_x, (s[1] / 3 + 2 * e[1] / 3) - font_size / 2 + shift_y),
                       str(c), size=font_size, parent=game_map)
+
+    buildings = []
+    b_size = 20
+    for x, y, building_id, building_name in game.list_building():
+        xd = (x + offset) * scale
+        yd = (y + offset) * scale
+        dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
+        dpg.draw_text((xd - b_size, yd + b_size), building_name, size=font_size, color=(255, 0, 0, 255), parent=game_map)
+        buildings.append((xd, yd, building_id))
+
+    with dpg.item_handler_registry() as map_handler:
+        dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
+    dpg.bind_item_handler_registry(game_map, map_handler)
 
     dpg.delete_item(query_table, children_only=True)
 
@@ -299,7 +300,7 @@ with dpg.window() as game_window:
         with dpg.child_window(width=0.4 * MAIN_WIDTH, horizontal_scrollbar=True) as left_view:
             with dpg.group() as map_view:
                 dpg.add_text('Map')
-                game_map = dpg.add_drawlist(width=1500, height=1500)
+                game_map = dpg.add_drawlist(width=3000, height=3000)
 
         with dpg.child_window() as right_view:
             with dpg.group() as query_view:

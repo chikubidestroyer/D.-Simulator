@@ -188,9 +188,9 @@ def list_edge() -> List[Tuple[int, int, int, int, int]]:
     return cur.fetchall()
 
 
-def list_building() -> List[Tuple[int, int, int]]:
-    """Return a list of coordinates and `building_id` and for all buildings."""
-    cur = con.execute('''SELECT x, y, building_id
+def list_building() -> List[Tuple[int, int, int, str]]:
+    """Return a list of basic building information for all buildings."""
+    cur = con.execute('''SELECT x, y, building_id, building_name
                            FROM building
                            JOIN vertex
                                 ON building_id=vertex_id''')
