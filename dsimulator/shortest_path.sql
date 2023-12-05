@@ -12,7 +12,6 @@ While there were implementations of Dijkstra in SQL online,
 I did not base my code off them anyways as SQLite doesn't have loops
 which were used in all these implementations.
 
-TODO: Exclude buildings under lockdown.
 */
 
 PRAGMA recursive_triggers = ON; -- Need to turn this on manually.
@@ -39,7 +38,7 @@ BEGIN
 	UPDATE dist
 	   SET d = nd
 	  FROM (SELECT end AS nv, (NEW.d + cost_min) AS nd
-	          FROM edge
+	          FROM modified_edge
 	         WHERE start = NEW.dst)
 	 WHERE src = NEW.src AND dst = nv AND visited = FALSE AND (d IS NULL OR d > nd);
 

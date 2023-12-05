@@ -35,22 +35,24 @@ def init_game() -> None:
     gen.generate_inhabitants_and_relationships(con)
     gen.generate_test_killer(con)
     gen.init_status(con)
-    print('data population complete')
     init_commonality_view()
-    print('commonality view test complete')
+    init_kill_trigger()
+    create_lockdown_buidling_view()
+    create_modified_edge_view()
+
+def next_day() -> None:
+    global day
+    day += 1
     query_loc_time_inhabitant()
-    print(select_victim())
-    print('kill_sequence test complete')
-
-    '''
-    while day != resig_day:
-
-        query_loc_time_inhabitant()
-
-        day += 1
-        con.execute('UPDATE status SET day = ?', day)
-    '''
-
+    victim = select_victim()
+    if victim != None:
+        kill_inhabitant(select_victim())
+    
+def kill_inhabitant(victim):
+    global con
+    global day
+    with con:
+        con.execute("INSERT INTO victim VALUES (?,?,?,?)", (victim[0], day, victim[2], victim[1]))
 
 def close_game() -> None:
     """Close the connection to game state database."""
@@ -220,6 +222,17 @@ def create_lockdown_buidling_view() -> None:
             WHERE lockdown = 1;
                 ''')
 
+def create_modified_edge_view() -> None:
+    """create edge adjusted for lockdown buildings"""
+    con.execute('''
+                CREATE VIEW modified_edge AS
+                    SELECT *
+                    FROM edge
+                    WHERE NOT EXISTS (SELECT * 
+                        FROM lockdown_building 
+                        WHERE `start` = building_id OR `end` = building_id
+                    )
+                ''')
 
 def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
     """Return the list of inhabitants having relations with subject."""
@@ -273,6 +286,10 @@ def query_loc_time() -> None:
 def init_commonality_view() -> None:
     with con:
         run_script('victim_common_attribute.sql')
+        
+def init_kill_trigger() -> None:
+    with con:
+        run_script('kill_trigger.sql')
 
 
 def query_loc_time_inhabitant() -> None:
@@ -284,6 +301,8 @@ def query_loc_time_inhabitant() -> None:
     # Currently, the inhabitant may leave home after 7:00 (420 mins)
     # and must return home before 19:00 (1140 mins).
     # Also only those with a workplace is considered.
+    
+    # adjusted to remove dead inhabitant from query
     with con:
         con.execute('''INSERT INTO src_dst (inhabitant_id, src, dst, t_src, t_dst)
                            WITH t AS(
@@ -293,7 +312,7 @@ def query_loc_time_inhabitant() -> None:
                                       USING(workplace_id)
                                       JOIN occupation
                                       USING(occupation_id)
-                                WHERE workplace_id IS NOT NULL
+                                WHERE workplace_id IS NOT NULL AND dead <> 1
                            )
                            SELECT inhabitant_id, home_building_id, workplace_building_id, 420, arrive_min
                              FROM t

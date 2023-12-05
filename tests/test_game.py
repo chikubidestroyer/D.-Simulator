@@ -2,6 +2,13 @@ import dsimulator.game as game
 
 game.init_game()
 
+game.next_day()
+game.next_day()
+game.next_day()
+print(game.con.execute("SELECT count(distinct building_id) FROM lockdown_building").fetchall())
+print(game.con.execute("SELECT * FROM victim").fetchall())
+print(game.con.execute("select * from commonality").fetchall())
+
 cur = game.con.execute('SELECT * FROM income_range')
 print('income_range:')
 print(cur.fetchall())
