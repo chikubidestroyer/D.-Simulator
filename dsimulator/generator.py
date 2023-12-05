@@ -35,10 +35,10 @@ def generate_home(con: sqlite3.Connection, building_per_range=2) -> None:
             cur = con.execute('INSERT INTO income_range (low, high) VALUES (?, ?)', r)
             income_level = cur.lastrowid
 
-            for _ in range(building_per_range):
+            for i in range(building_per_range):
                 home_building_id = get_free_vertex(con)
                 con.execute('INSERT INTO building (building_id, building_name, lockdown) VALUES (?, ?, ?)',
-                            (home_building_id, n, 0))
+                            (home_building_id, n + ' ' + str(i + 1), 0))
                 con.execute('INSERT INTO home (home_building_id, income_level) VALUES (?, ?)',
                             (home_building_id, income_level))
 
