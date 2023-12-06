@@ -28,7 +28,8 @@ def init_game() -> None:
 
     run_script('DDL.sql')
 
-    con.execute('UPDATE STATUS SET day = 0, resignation_day = 15')
+    with con:
+        con.execute('UPDATE STATUS SET day = 0, resignation_day = 15')
     day = 0
     resig_day = 15
 
@@ -50,6 +51,8 @@ def next_day() -> None:
     """End the turn and proceed to the next day."""
     global day
     day += 1
+    with con:
+        con.execute('UPDATE STATUS SET day = ?', (day,))
 
     query_shortest_path()
     # print('Queried `dist`')
