@@ -31,5 +31,5 @@ FROM (
     SELECT 'income_level', CAST(income_level AS TEXT) FROM victim_info
 ) AS attributes
 GROUP BY attribute_name, attribute_value
-HAVING COUNT(*) >= 2
+HAVING COUNT(*) >= 3
 ORDER BY attribute_cnt DESC;
