@@ -223,6 +223,20 @@ def update_victim() -> None:
     with dpg.group(parent=victim_window):
         draw_inhabitants_table(game.query_inhabitant(dead=True))
 
+        dpg.add_separator()
+
+        dpg.add_text('Common Attributes')
+        attributes = game.query_victim_commonality()
+        with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+            dpg.add_table_column()
+            dpg.add_table_column()
+            dpg.add_table_column()
+
+            for r in attributes:
+                with dpg.table_row():
+                    for c in r:
+                        dpg.add_text(c)
+
 
 def show_suspect() -> None:
     """Show all the victims in a window."""
@@ -240,6 +254,7 @@ def update_suspect() -> None:
 def next_turn() -> None:
     """Execute one turn of the game."""
     game.next_day()
+    close_details()
     hide_windows()
     update_game_window()
 
@@ -254,8 +269,8 @@ def update_game_window() -> None:
     dpg.delete_item(game_map, children_only=True)
     scale = 180
     offset = 1
-    for x, y in game.list_vertex():
-        dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 10, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
+    for i, x, y in game.list_vertex():
+        dpg.draw_circle(((x + offset) * scale, (y + offset) * scale), 15, color=(255, 255, 255, 255), fill=(255, 255, 255, 255), parent=game_map)
 
     font_size = 20
     shift = 12
@@ -281,6 +296,9 @@ def update_game_window() -> None:
         dpg.draw_rectangle((xd - b_size, yd - b_size), (xd + b_size, yd + b_size), color=(255, 0, 0, 255), fill=(255, 0, 0, 255), parent=game_map)
         dpg.draw_text((xd - b_size, yd + b_size), building_name, size=font_size, color=(255, 0, 0, 255), parent=game_map)
         buildings.append((xd, yd, building_id))
+
+    for i, x, y in game.list_vertex():
+        dpg.draw_text(((x + offset) * scale - font_size / 2, (y + offset) * scale - font_size / 2), str(i), size=font_size, color=(0, 0, 0, 255), parent=game_map)
 
     with dpg.item_handler_registry() as map_handler:
         dpg.add_item_clicked_handler(callback=make_building_clicked(buildings, b_size))
@@ -341,7 +359,7 @@ with dpg.window() as game_window:
 
         with dpg.child_window() as right_view:
             with dpg.group() as query_view:
-                dpg.add_text('Query Result')
+                dpg.add_text('Query Inhabitants')
 
                 with dpg.group(horizontal=True):
                     dpg.add_text('income_lo: ')

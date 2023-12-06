@@ -179,7 +179,7 @@ def delete_save(save_id: int) -> None:
 
 def list_vertex() -> List[Tuple[int, int]]:
     """Return a list of coordinates for all vertices."""
-    cur = con.execute('SELECT x, y FROM vertex')
+    cur = con.execute('SELECT vertex_id, x, y FROM vertex')
     return cur.fetchall()
 
 
@@ -352,7 +352,7 @@ def query_loc_time_inhabitant() -> None:
                                       USING(workplace_id)
                                       JOIN occupation
                                       USING(occupation_id)
-                                WHERE workplace_id IS NOT NULL AND dead <> 1
+                                WHERE workplace_id IS NOT NULL AND dead = FALSE
                            )
                            SELECT inhabitant_id, home_building_id, workplace_building_id, 420, arrive_min
                              FROM t
