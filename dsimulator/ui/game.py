@@ -20,6 +20,7 @@ def hide_windows() -> None:
     """Hide the pop-up windows."""
     dpg.hide_item(victim_window)
     dpg.hide_item(suspect_window)
+    dpg.hide_item(via_point_window)
     dpg.hide_item(lose_window)
     dpg.hide_item(win_window)
     dpg.hide_item(wrong_window)
@@ -251,6 +252,40 @@ def update_suspect() -> None:
         draw_inhabitants_table(game.query_inhabitant(suspect=True))
 
 
+def show_via_point() -> None:
+    """Show the via point window."""
+    dpg.show_item(via_point_window)
+
+
+def update_via_point() -> None:
+    """Update the suspect window."""
+    dpg.delete_item(via_point_table, children_only=True)
+
+    try:
+        start = dpg.get_value(start_input)
+        start = int(start) if len(start) > 0 else None
+        end = dpg.get_value(end_input)
+        end = int(end) if len(end) > 0 else None
+        mins = dpg.get_value(mins_input)
+        mins = int(mins) if len(mins) > 0 else None
+
+        via_points = game.query_via_point_constraint(start, end, mins)
+
+    except ValueError:
+        dpg.add_table_column(label='Input Error', parent=via_point_table)
+
+    except sqlite3.OperationalError:
+        dpg.add_table_column(label='Query Error', parent=via_point_table)
+
+    else:
+        dpg.add_table_column(label='Via Point', parent=via_point_table)
+
+        for r in via_points:
+            with dpg.table_row(parent=via_point_table):
+                for c in r:
+                    dpg.add_text(c)
+
+
 def next_turn() -> None:
     """Execute one turn of the game."""
     game.next_day()
@@ -400,6 +435,7 @@ with dpg.window() as game_window:
 
         dpg.add_button(label='Victim', callback=show_victim)
         dpg.add_button(label='Suspect', callback=show_suspect)
+        dpg.add_button(label='Via Point', callback=show_via_point)
 
         dpg.add_spacer()
 
@@ -412,6 +448,21 @@ victim_window = dpg.add_window(label='Victim', width=MAIN_WIDTH / 2, height=MAIN
 dpg.hide_item(victim_window)
 suspect_window = dpg.add_window(label='Suspect', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2)
 dpg.hide_item(suspect_window)
+
+with dpg.window(label='Via Point', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2) as via_point_window:
+    with dpg.group(horizontal=True):
+        dpg.add_text('start')
+        start_input = dpg.add_input_text()
+    with dpg.group(horizontal=True):
+        dpg.add_text('end')
+        end_input = dpg.add_input_text()
+    with dpg.group(horizontal=True):
+        dpg.add_text('mins')
+        mins_input = dpg.add_input_text()
+    dpg.add_button(label='Search', callback=update_via_point)
+    via_point_table = dpg.add_table(policy=dpg.mvTable_SizingStretchProp)
+
+dpg.hide_item(via_point_window)
 
 with dpg.window(label='You Lose', width=MAIN_WIDTH / 2, height=MAIN_HEIGHT / 2) as lose_window:
     dpg.add_text('You have resigned after failing to catch the killer on time.')
