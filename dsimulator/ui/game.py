@@ -113,7 +113,7 @@ def show_building_detail(building_id: int) -> None:
         dpg.add_separator()
         dpg.add_text('Witness Counts')
         result = game.query_witness_count(building_id)
-        with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+        with dpg.table(policy=dpg.mvTable_SizingStretchProp):
             dpg.add_table_column(label='inhabitant_id')
             dpg.add_table_column(label='first_name')
             dpg.add_table_column(label='last_name')

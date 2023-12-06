@@ -470,24 +470,28 @@ def query_via_point_constraint(start: int, end: int, mins: int) -> List[Tuple[in
     return cur.fetchall()
 
 
-# TODO: Exclude counts after an inhabitant has been killed.
-
-
 def query_witness_count(vertex_id: int) -> List[Tuple[str, str, int]]:
     """
     List the name and the number of times that each inhabitant has been seen in a vertex.
 
     query_loc_time() must be run before calling this function.
     """
-    cur = con.execute('''SELECT inhabitant.inhabitant_id, first_name, last_name, COUNT(*) AS c
+
+    cur = con.execute('''SELECT a.inhabitant_id, MIN(a_info.first_name), MIN(a_info.last_name),
+                                COUNT(b.inhabitant_id) AS c
                            FROM loc_time AS a
-                                JOIN inhabitant
-                                USING(inhabitant_id)
+                                JOIN inhabitant AS a_info
+                                ON a_info.inhabitant_id = a.inhabitant_id
                                 JOIN loc_time AS b
                                 ON a.inhabitant_id <> b.inhabitant_id
                                    AND a.vertex_id = b.vertex_id
                                    AND ((a.arrive <= b.arrive AND b.arrive <= a.leave)
                                         OR (a.arrive <= b.leave AND b.leave <= a.leave))
+                                   AND (a_info.dead = FALSE OR a.arrive
+                                       <= (SELECT MIN(min_of_death) FROM victim WHERE victim_id = a.inhabitant_id))
+                                   AND b_info.dead = FALSE
+                                JOIN inhabitant AS b_info
+                                ON b_info.inhabitant_id = b.inhabitant_id
                           WHERE a.vertex_id = ?
                        GROUP BY a.inhabitant_id
                        ORDER BY c DESC''',
