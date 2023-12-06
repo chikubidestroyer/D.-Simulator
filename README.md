@@ -45,13 +45,13 @@ dsimulator
 
 ### Game Logic
 - [x] Implement the killer's behavior algorithm based on the killer and killer_chara tables.
-- [ ] Develop a simulation system for roadblocks or impassable areas affecting the edge table.
-- [ ] Ensure interaction and updates between in-game actions (interrogation, evidence collection) and the database.
+- [x] Develop a simulation system for roadblocks or impassable areas affecting the edge table.
+- [x] Ensure interaction and updates between in-game actions (interrogation, evidence collection) and the database.
 - [x] Calculate killer movement paths and required time.
 - [x] Consider implementing a possible save/load mechanism.
-- [ ] Define characteristics of the killer and ordinary residents and their interactions.
-- [ ] Implement the sheriff's interrogation skills, road closure abilities, and suspect apprehension functionality.
-- [ ] If interrogation functionality is implemented, hide certain information from players and implement related features.
+- [x] Define characteristics of the killer and ordinary residents and their interactions.
+- [x] Implement the sheriff's interrogation skills, road closure abilities, and suspect apprehension functionality.
+- [x] If interrogation functionality is implemented, hide certain information from players and implement related features.
 
 ### SQLite Database Interaction
 - [x] Implement functions to query the SQLite database to retrieve information about locations, characters, and events as needed.
