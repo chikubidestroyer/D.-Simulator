@@ -244,11 +244,16 @@ def query_workplace_occupation(building_id: int) -> Tuple[Tuple[str, ...], Tuple
         cur.fetchall()
 
 
-def lockdown(building_id: int) -> None:
-    """Set given building to lockdown."""
+def toggle_lockdown(building_id: int) -> None:
+    """Set/unset given building to lockdown."""
+    cur = con.execute('''
+        SELECT COUNT(*)
+        FROM building
+        WHERE building_id = {0} AND lockdown = TRUE'''.format(building_id))
+
     con.execute('''
         UPDATE building
-        SET lockdown = 1
+        SET lockdown = 1 - lockdown
         WHERE building_id = {0};'''.format(building_id))
 
 

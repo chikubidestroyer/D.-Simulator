@@ -80,7 +80,7 @@ def show_building_detail(building_id: int) -> None:
         with dpg.group(horizontal=True):
             dpg.add_text(building_name)
             dpg.add_button(label='Close', callback=close_building_detail)
-            dpg.add_button(label='Set Lockdown', callback=make_set_lockdown(building_id))
+            dpg.add_button(label='Toggle Lockdown', callback=make_toggle_lockdown(building_id))
 
         dpg.add_text(('Home, ' if home == 1 else 'Workplace, ')
                      + ('under lockdown' if lockdown == 1 else 'not under lockdown'))
@@ -135,14 +135,14 @@ def close_building_detail() -> None:
         dpg.show_item(map_view)
 
 
-def make_set_lockdown(building_id: int) -> Callable[[], None]:
-    """Return a function that sets a building to lockdown."""
-    def set_lockdown() -> None:
-        game.lockdown(building_id)
+def make_toggle_lockdown(building_id: int) -> Callable[[], None]:
+    """Return a function that toggles a building's lockdown status."""
+    def toggle_lockdown() -> None:
+        game.toggle_lockdown(building_id)
         close_building_detail()
         update_game_window()
         show_building_detail(building_id)
-    return set_lockdown
+    return toggle_lockdown
 
 
 def make_accuse(inhabitant_id: int) -> Callable[[], None]:
