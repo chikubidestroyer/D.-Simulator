@@ -21,7 +21,7 @@ PRAGMA recursive_triggers = ON; -- Need to turn this on manually.
 
 DROP TABLE IF EXISTS dist;
 
-CREATE TEMP TABLE dist(
+CREATE TABLE dist(
 	src     INTEGER NOT NULL,
 	dst     INTEGER NOT NULL,
 	d       INTEGER,
@@ -32,7 +32,7 @@ CREATE TEMP TABLE dist(
 CREATE INDEX idx_dist ON dist(src, visited, d);
 
 -- Called when a vertex is added to the "visited" set.
-CREATE TEMP TRIGGER update_dist AFTER UPDATE OF visited ON dist
+CREATE TRIGGER update_dist AFTER UPDATE OF visited ON dist
 BEGIN
 	-- Update the shortest distance to the neighbor of this vertex.
 	UPDATE dist

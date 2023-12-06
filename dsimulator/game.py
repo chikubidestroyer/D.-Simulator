@@ -43,6 +43,8 @@ def init_game() -> None:
     create_lockdown_building_view()
     create_modified_edge_view()
 
+    next_day()
+
 
 def next_day() -> None:
     """End the turn and proceed to the next day."""
@@ -273,7 +275,7 @@ def create_modified_edge_view() -> None:
 def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
     """Return the list of inhabitants having relations with subject."""
     cur = con.execute('''
-        SELECT first_name, last_name, description
+        SELECT inhabitant.inhabitant_id, first_name, last_name, description
           FROM relationship
                JOIN inhabitant
                ON inhabitant_id = object_id
@@ -284,12 +286,11 @@ def query_inhabitant_relationship(subject_id: int) -> List[Tuple]:
 def modify_suspect(inhabitant_id: int) -> None:
     """Set/unset given inhabitant in suspect."""
     cur = con.execute('''
-        SELECT *
+        SELECT COUNT(*)
         FROM suspect
         WHERE inhabitant_id = {0}'''.format(inhabitant_id))
-    # not sure about the format of query result
-    # will empty query return empty list?
-    if cur.fetchall() is None:
+
+    if cur.fetchone()[0] == 0:
         con.execute('''
             INSERT INTO suspect
             VALUES ({0})'''.format(inhabitant_id))
@@ -472,7 +473,6 @@ def query_via_point_constraint(start: int, end: int, mins: int) -> List[Tuple[in
 
 
 # TODO: Exclude counts after an inhabitant has been killed.
-# TODO: Test this with inhabitant data.
 
 
 def query_witness_count(vertex_id: int) -> List[Tuple[str, str, int]]:
@@ -481,7 +481,7 @@ def query_witness_count(vertex_id: int) -> List[Tuple[str, str, int]]:
 
     query_loc_time() must be run before calling this function.
     """
-    cur = con.execute('''SELECT first_name, last_name, COUNT(*) AS c
+    cur = con.execute('''SELECT inhabitant.inhabitant_id, first_name, last_name, COUNT(*) AS c
                            FROM loc_time AS a
                                 JOIN inhabitant
                                 USING(inhabitant_id)
@@ -493,8 +493,8 @@ def query_witness_count(vertex_id: int) -> List[Tuple[str, str, int]]:
                           WHERE a.vertex_id = ?
                        GROUP BY a.inhabitant_id
                        ORDER BY c DESC''',
-                      vertex_id)
-    return cur
+                      (vertex_id,))
+    return cur.fetchall()
 
 
 def query_victim_commonality() -> List[Tuple]:

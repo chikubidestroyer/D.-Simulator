@@ -110,6 +110,22 @@ def show_building_detail(building_id: int) -> None:
         dpg.add_text('Inhabitants')
         draw_inhabitants_table(inhabitant_data)
 
+        dpg.add_separator()
+        dpg.add_text('Witness Counts')
+        result = game.query_witness_count(building_id)
+        with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+            dpg.add_table_column(label='inhabitant_id')
+            dpg.add_table_column(label='first_name')
+            dpg.add_table_column(label='last_name')
+            dpg.add_table_column(label='count')
+            dpg.add_table_column()
+
+            for r in result:
+                with dpg.table_row():
+                    for c in r:
+                        dpg.add_text(c)
+                    dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
+
 
 def close_building_detail() -> None:
     """Close the building detail view."""
@@ -173,14 +189,17 @@ def make_inhabitant_clicked(inhabitant_id: int) -> Callable[[], None]:
 
             relationship_rows = game.query_inhabitant_relationship(inhabitant_id)
             with dpg.table(policy=dpg.mvTable_SizingStretchProp):
+                dpg.add_table_column(label='inhabitant_id')
                 dpg.add_table_column(label='object_first_name')
                 dpg.add_table_column(label='object_last_name')
                 dpg.add_table_column(label='description')
+                dpg.add_table_column()
 
                 for r in relationship_rows:
                     with dpg.table_row():
                         for c in r:
                             dpg.add_text(c)
+                        dpg.add_button(label='Details', callback=make_inhabitant_clicked(r[0]))
 
     return inhabitant_clicked
 

@@ -2,7 +2,7 @@
 -- this version is NOT TESTED
 
 DROP TABLE IF EXISTS weighed_pot_victim;
-CREATE TEMP TABLE weighed_pot_victim (
+CREATE TABLE weighed_pot_victim (
   inhabitant_id INTEGER,
   description TEXT,
   chara_weight INTEGER,
@@ -10,7 +10,7 @@ CREATE TEMP TABLE weighed_pot_victim (
 );
 
 DROP TABLE IF EXISTS pot_victim;
-CREATE TEMP TABLE pot_victim(
+CREATE TABLE pot_victim(
     inhabitant_id INTEGER,
     vertex_id INTEGER,
     start_min INTEGER,

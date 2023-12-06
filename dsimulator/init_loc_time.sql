@@ -14,7 +14,7 @@ The constraints should be added into the src_dst first.
 
 DROP TABLE IF EXISTS src_dst;
 
-CREATE TEMP TABLE src_dst(
+CREATE TABLE src_dst(
 	inhabitant_id INTEGER NOT NULL,
 	src           INTEGER NOT NULL,
 	dst           INTEGER NOT NULL,
@@ -26,7 +26,7 @@ CREATE TEMP TABLE src_dst(
 DROP TABLE IF EXISTS loc_time;
 
 -- Indicate that an inhabitant arrives and leaves at a certain vertex at certain times.
-CREATE TEMP TABLE loc_time(
+CREATE TABLE loc_time(
 	inhabitant_id INTEGER NOT NULL,
 	vertex_id     INTEGER NOT NULL,
 	arrive        INTEGER NOT NULL,
@@ -38,7 +38,7 @@ CREATE TEMP TABLE loc_time(
 );
 
 -- Called each time a new location-time decision is made and thus inserted into the table.
-CREATE TEMP TRIGGER insert_loc_time AFTER INSERT ON loc_time
+CREATE TRIGGER insert_loc_time AFTER INSERT ON loc_time
 WHEN
 	-- Stop when the destination is reached.
 	NEW.vertex_id <> NEW.dst
