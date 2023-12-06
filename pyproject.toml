@@ -8,7 +8,7 @@ version = '0.0.1'
 authors = [
     { name='Yuxiang Lin', email='yuxiang.lin@dukekunshan.edu.cn' },
     { name='Shanruo Xu', email='shanruo.xu@dukekunshan.edu.cn' },
-    { name='Issac Yang', email='issac.yang@dukekunshan.edu.cn' },
+    { name='Isaac Yang', email='isaac.yang@dukekunshan.edu.cn' },
 ]
 description = 'A detective simulation game'
 readme = 'README.md'
