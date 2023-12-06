@@ -299,11 +299,9 @@ def modify_suspect(inhabitant_id: int) -> None:
             DELETE FROM suspect
             WHERE inhabitant_id = {0}'''.format(inhabitant_id))
 
-# TODO: Exclude buildings under lockdown.
-
 
 def query_shortest_path() -> None:
-    """Get the shortest path between all vertex pairs in a temp table `dist`."""
+    """Get the shortest path between all vertex pairs in a table `dist`."""
     with con:
         run_script('shortest_path.sql')
 
